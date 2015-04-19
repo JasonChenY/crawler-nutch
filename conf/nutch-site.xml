@@ -4,5 +4,36 @@
 <!-- Put site-specific property overrides in this file. -->
 
 <configuration>
+<property>
+ <name>storage.data.store.class</name>
+ <value>org.apache.gora.hbase.store.HBaseStore</value>
+ <description>Default class for storing data</description>
+</property>
+
+<property>  
+ <name>http.agent.name</name>  
+ <value>My Nutch Spider</value>  
+</property>  
+
+<property>
+  <name>fetcher.threads.fetch</name>
+  <value>1</value>
+</property>
+
+<property>
+  <name>fetcher.verbose</name>
+  <value>true</value>
+</property>
+
+<property>
+  <name>db.max.outlinks.per.page</name>
+  <value>10</value>
+</property>
+
+<property>
+  <name>plugin.includes</name>
+  <value>protocol-http|urlfilter-regex|parse-(js|html|tika)|index-(basic|anchor)|urlnormalizer-(pass|regex|basic)|scoring-opic|indexer-solr</value>
+</property>
 
 </configuration>
+

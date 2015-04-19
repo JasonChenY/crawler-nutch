@@ -371,6 +371,7 @@ public class SolrDeleteDuplicates
     getConf().set(SolrConstants.SERVER_URL, solrUrl);
 
     Job job = new Job(getConf(), "solrdedup");
+    job.setJarByClass(SolrDeleteDuplicates.class);
 
     job.setInputFormatClass(SolrInputFormat.class);
     job.setOutputFormatClass(NullOutputFormat.class);
