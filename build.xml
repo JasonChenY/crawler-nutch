@@ -188,6 +188,7 @@
       <packageset dir="${plugins.dir}/protocol-ftp/src/java"/>
       <packageset dir="${plugins.dir}/protocol-http/src/java"/>
       <packageset dir="${plugins.dir}/protocol-httpclient/src/java"/>
+      <packageset dir="${plugins.dir}/protocol-httpclient4/src/java"/>
       <packageset dir="${plugins.dir}/protocol-sftp/src/java"/>
       <packageset dir="${plugins.dir}/scoring-link/src/java"/>
       <packageset dir="${plugins.dir}/scoring-opic/src/java"/>
@@ -618,6 +619,7 @@
       <packageset dir="${plugins.dir}/protocol-ftp/src/java"/>
       <packageset dir="${plugins.dir}/protocol-http/src/java"/>
       <packageset dir="${plugins.dir}/protocol-httpclient/src/java"/>
+      <packageset dir="${plugins.dir}/protocol-httpclient4/src/java"/>
       <packageset dir="${plugins.dir}/protocol-sftp/src/java"/>
       <packageset dir="${plugins.dir}/scoring-link/src/java"/>
       <packageset dir="${plugins.dir}/scoring-opic/src/java"/>
@@ -999,6 +1001,7 @@
         <source path="${basedir}/src/plugin/protocol-ftp/src/java/" />
         <source path="${basedir}/src/plugin/protocol-httpclient/src/java/" />
         <source path="${basedir}/src/plugin/protocol-httpclient/src/test/" />
+        <source path="${basedir}/src/plugin/protocol-httpclient4/src/java/" />
         <source path="${basedir}/src/plugin/protocol-http/src/java/" />
       	<source path="${basedir}/src/plugin/protocol-http/src/test/" />
         <source path="${basedir}/src/plugin/protocol-sftp/src/java/" />

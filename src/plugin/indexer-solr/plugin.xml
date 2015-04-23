@@ -25,9 +25,9 @@
 
      <library name="activation-1.1.jar"/>
      <!--library name="commons-codec-1.4.jar"/-->
-     <library name="httpclient-4.2.5.jar"/>
+     <library name="httpclient-4.4.1.jar"/>
      <!--library name="commons-io-1.4.jar"/-->
-     <library name="commons-logging-1.1.1.jar"/>
+     <library name="commons-logging-1.2.jar"/>
      <library name="geronimo-stax-api_1.0_spec-1.0.1.jar"/>
      <library name="jline-0.9.1.jar"/>
      <library name="log4j-1.2.15.jar"/>

@@ -17,7 +17,19 @@
 
 <property>
   <name>fetcher.threads.fetch</name>
-  <value>1</value>
+  <value>5</value>
+</property>
+
+<property>
+  <name>fetcher.threads.per.queue</name>
+  <value>2</value>
+  <description>This number is the maximum number of threads that
+    should be allowed to access a queue at one time. Setting it to
+    a value > 1 will cause the Crawl-Delay value from robots.txt to
+    be ignored and the value of fetcher.server.min.delay to be used
+    as a delay between successive requests to the same server instead
+    of fetcher.server.delay.
+   </description>
 </property>
 
 <property>
@@ -32,8 +44,14 @@
 
 <property>
   <name>plugin.includes</name>
-  <value>protocol-http|urlfilter-regex|parse-(js|html|tika)|index-(basic|anchor)|urlnormalizer-(pass|regex|basic)|scoring-opic|indexer-solr</value>
+  <value>protocol-httpclient4|urlfilter-regex|parse-(html|tika)|index-(basic|anchor)|urlnormalizer-(pass|regex|basic)|scoring-opic|indexer-solr</value>
 </property>
+
+<property>
+  <name>db.ignore.external.links</name>
+  <value>true</value>
+</property>
+
 
 </configuration>
 
