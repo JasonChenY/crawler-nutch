@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ivy-module version="2.0" xmlns:m="http://ant.apache.org/ivy/maven">
+	<info organisation="com.googlecode.json-simple"
+		module="json-simple"
+		revision="1.1.1"
+	>
+		<description homepage="http://code.google.com/p/json-simple/">
+		A simple Java toolkit for JSON
+		</description>
+	</info>
+	<configurations>
+		<conf name="master" visibility="public" description="contains only the artifact published by this module itself, with no transitive dependencies"/>
+	</configurations>
+	<publications>
+		<artifact name="json-simple" type="bundle" ext="jar" conf="master"/>
+	</publications>
+</ivy-module>

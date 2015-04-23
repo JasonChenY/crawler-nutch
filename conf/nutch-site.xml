@@ -52,6 +52,10 @@
   <value>true</value>
 </property>
 
+<property>
+  <name>company.schema.dir</name>
+  <value>/sdk/tools/apache-nutch-2.3/localrepo/schemas</value>
+</property>
 
 </configuration>
 

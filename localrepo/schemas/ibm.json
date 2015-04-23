@@ -1,0 +1,19 @@
+{ 
+   "company" : "ibm",
+   "url" : "https://jobs3.netmedia1.com/cp/faces/job_search",
+   "method" : "POST",
+   "data" : "search_form%3Adesired_product_type_id=999&search_form%3Akeywords=&search_form%3Acategory_0&search_form%3Acontinent_id=4&search_form%3Acountry_id=10&ajaxHelpKey=&graduate=999&myForm%3Aadv=false&myForm_SUBMIT=1&javax.faces.ViewState=bwF3JlytifYaYq5RlKjgNKguu801HSruyJF98qr47hZoR1U7lj7DHaYwPHn%2FCknA7ZaMnqB2uZ9tVeOVD19GbeAN2d9p9jdkvCb9HuPFWjfCjO0oaspMsLxtOfsKOERsudt6vxv90N2WbN%2BnTxhkWISJm%2FK9hdibJqDRZTsi2OxslnTSngOsvYIBEoQkbydFcdfbJzrreef8eB9tVMAkpW5rI%2BjvYKeY%2BNv2j7LP1WZGBymnB%2F5QrRKYhQs5MyrpxMeQtTY3WxVGUS0Q4IPFwS26ZhPX2IzDf0J1aTgksxvyFV3042oHkjrl%2BkQ154rwngQ2El3Ww3MUtT3cGB0RLzm1%2BApUfdVsCuQkTni4p99QiPb9sKVhlSJFd8lBVQRzQ4dHRm%2BTRGtiuNEOr1haKGWqRn0FWBi5Is3uU17i%2FOL%2FF7s5zO4kxJPFWbV7rVBaA72TtuWgmQnK4dkX4dD51FXPCh4EkcvPw3jTe35QNIqUUKu3ioD1qaoG5nSd0CUxVxzsNSif2C8E4ZjLNBvhryFnI0eYZvvJVFYdR0RiaTDjWWfwmvklAHYD4zxYHheCVgmrPt0Lb7pIqW9cV6R2KwvNBYhpq1Jq4sPeXZ9N6K%2BJKBKDLvHa8zhMOI0r5DBZf8H3d7bb3GQAscsdZgtlqIhcpwqxvYOPLkrO1%2FbyDc9hhGhDPwpHYSaZjy4XZgOU6na0hO7Ao70GXrf%2Bia3vww4oDXQzrJskG9KVyoNBMJ8PSfryQtUMlwjb5unVGuNk%2BH52GANK14i2UZuw08h0aM9oviS9otx0bqtbs1QqdUAyl%2FHYI3MgJTUlCAh8snzwvu%2FqCDQbhd3BvNjV9dozEwBDwfmgDsUko5pz8taJOz6dyGIoCC%2F1948mQQ0IQ%2BouP4FVeTt6LL%2BvUvwDjKkZOVvB95zFz%2FU6Kntbun4GSNS26rB4viKzqI0DhA6bGk4J3nUjEgkF2RE1K4c4f2VsRUbYdu6wMGZWFpirv%2FYIN7swUb2%2FulcllpWiNGtjNKT1Ghuk%2FqQ7M%2FIUcduzrlsKZwqLtCHKSQaKLpaujaOwlks9Zen5tZQp7DTyCwyeNi6G0KMWCnRf4mL9iwY2MU2znk1s5YVxo6%2F37A4G5ArJGepmi6Zx0ZA%2BUcs83I5wdloXQycII%2FELK1LEbvZiu70grIQbhUvcl8klEl0WK3eyN4Hm9L5f6JF8FF%2BH6K5dwu72xcksH2eulNkjsfkf9%2BJAaxtG9N%2BCBuhQ%2FEhMvvHRtapERb%2BQqcZH78ngTkM%2Fq2LyOJBoSL5%2BZa8ZlZMOHa%2Beap2FzHyOON2k2h8WPip9cHUgR2m6%2Fta7D08VBr68KG9Vwc56IbvQdtbeR06oMeo7EVT7A4ZhC1niHCSM0hEabvZLCux4dJcEBIBNg4M5%2F7ZUm2AteM0PmZeqSOKT1MvuFCsng1bSilmnYEOR5HsB%2BXnVfU0xbcFyUL1MymtuhxWij1Iq8AGnpPJGuy28f67AHEvIITxZTkgRyJSDmPyyfB829slty6C0Ws0pTd7i8RBBTWeVJzwWSXVDiSS%2BnGcnX%2FDjtLIxSy0Bg3RUegH8mrLX%2Fpm07akVu40YEC1%2FFWdhXUqItwc%2FaA6CtyqYpTubFyZPya4SBCtNn9C%2FGPB%2BpqFMPXBPiq7hrGqxWDlN63WlfC51m%2FBHqmToEed0CBzbztgcCC%2Fzcky5nS43zRG23yxrwO3JeodnrxQG0Q7TxlZc18SW1RjP4mo%2BHVw9Jwqn8jbOsPMM0YuZq%2FO2goXqQD7HcWEhYV9OZokhxCyxZGSOqGtqAJpfxQY9Lz1Ho0WYx1acealmiW%2Fd6pxqDc5fojBinVVbejdITfEZo2UiWTnbTEKkEsqNkYdk41pjiJdWViSd5Ga%2Bl%2F8NEehGKYVEwaUcC3OhW6p7Ft00MgLnkC8HFUGZOGJOURahdn%2Ffxa8rddxYWfRTvgYJDfmAfJxR2UGlm9P%2Bxkk%2B%2FHkfHk9bNOZ2UsMrGXOafKUetaVkkj9oYrw4YJHeNs2q2IUDv9NQP0fqYDtIJLUaLPw0k7n9Erua2TUz5YQtJcFYYoqDcCSDUc51%2FV%2FtD6kNa6fyaYJyl7hhs90QdTrmsSrE0xqxvXjw3PHY%2FaIYpglzXattf2rK6Y3lVdkY2M%2FTTG0A5BK6Z4MowyaJvlkm4gKi6cHv2pGMX8mgyamNul7V2olJn%2FHVcPFw%2BjdQV%2BKXw20YBlTZnS68txFz76C0%2FqVKQECdszrL9ruM%2Bdi0FsVYVEfaEfQLd0A8oNtz%2FUt%2FMsgZ3S4TfhwmOtpi8o%2Bm%2FEjychjQFI79CkD7WdOlnvfvxyD7VfCKKsnJ2dbZ56cD23w9qis%2F9CIe0rdtZKv7tmyDVIXU8yNonvRtAfYYlsBeRAUKzTfxg%2BeSnSFmPdpzH4QUIiB%2FuA7yNX0%2BXrQ1hQigv6Cl61GJMeO7Eg5W21ysvkKlK3VsQHbfxpT%2BOiWousxu%2BwHP3gl%2FIRbBEf2IKJZu%2BJvarNV8Jt5Ex4mA1nx407W9KF8lpoOYimU%3D&desired_product_type_id=999&adv=false&_action=search_results&myForm%3A_idcl=myForm%3Aj_id879509830_3_69c2e1d" 
+   "page_list" : {
+       "schema": "//main:TABLE[@class='search-results-ops']/main:TBODY/main:TR/main:TD[2]/main:A[1]/@href",
+       "pattern":"scroll_action=",
+       "increment":"1",
+       "last"  : "//main:TABLE[@class='search-results-ops']/main:TBODY/main:TR/main:TD[2]/main:A[last()-1]/text()",
+   },
+   "page": {
+       "schema" : "//main:TBODY[@id='myForm:job-table:tbody_element']/main:TR",
+        "job_link" : "./main:TD[@class='job-table-2']/main:A/@href",
+        "job_title" : "./main:TD[@class='job-table-2']/main:A/text()",
+        "job_location" : "./main:TD[@class='job-table-3']/text()",
+        "job_date" : "./main:TD[@class='job-table-5']/text()"
+   }
+}
