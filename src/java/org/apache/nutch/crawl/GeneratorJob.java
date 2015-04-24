@@ -70,6 +70,7 @@ public class GeneratorJob extends NutchTool implements Tool {
     FIELDS.add(WebPage.Field.SCORE);
     FIELDS.add(WebPage.Field.STATUS);
     FIELDS.add(WebPage.Field.MARKERS);
+    FIELDS.add(WebPage.Field.METADATA);
   }
 
   public static final Logger LOG = LoggerFactory.getLogger(GeneratorJob.class);

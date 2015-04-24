@@ -31,11 +31,18 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 //import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpRequestBase;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
 //import org.apache.http.params.BasicHttpParams;
+import org.apache.http.entity.StringEntity;
 
 // Nutch imports
+import org.apache.http.client.methods.HttpPost;
+import org.apache.nutch.companyschema.CompanySchema;
+import org.apache.nutch.companyschema.CompanySchemaRepository;
 import org.apache.nutch.metadata.Metadata;
 import org.apache.nutch.metadata.SpellCheckedMetadata;
 import org.apache.nutch.net.protocols.HttpDateFormat;
@@ -43,6 +50,13 @@ import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.http.api.HttpBase;
 import org.apache.nutch.storage.WebPage;
 
+import org.apache.nutch.companyschema.*;
+
+import java.nio.ByteBuffer;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import org.apache.nutch.util.Bytes;
 /**
  * An HTTP response.
  * 
@@ -54,7 +68,8 @@ public class HttpResponse implements Response {
   private byte[] content;
   private int code;
   private Metadata headers = new SpellCheckedMetadata();
-
+  private static CompanySchemaRepository repo;
+  private static Utf8 company_key = new Utf8("__company__");
   /**
    * Fetches the given <code>url</code> and prepares HTTP response.
    * 
@@ -71,37 +86,75 @@ public class HttpResponse implements Response {
    * @throws IOException
    *           When an error occurs
    */
+
+
   HttpResponse(Http http, URL url, WebPage page, boolean followRedirects)
       throws IOException {
+    CompanySchema schema = null;
+    HttpRequestBase request;
 
+    if ( repo == null ) repo = new CompanySchemaRepository(http.getConf());
+      /*
+      Map<CharSequence, ByteBuffer> metadata = page.getMetadata();
+      StringBuffer sb = new StringBuffer();
+      if (metadata != null) {
+          Iterator<Entry<CharSequence, ByteBuffer>> iterator = metadata.entrySet()
+                  .iterator();
+          while (iterator.hasNext()) {
+              Entry<CharSequence, ByteBuffer> entry = iterator.next();
+              sb.append(entry.getKey().toString()).append(" : \t")
+                      .append(Bytes.toString(entry.getValue())).append("\n");
+          }
+          Http.LOG.info("metadata: " + sb.toString());
+      } else Http.LOG.warn("no metadata");
+      */
     /* Here to check some fields inside page to determine whether use GET or POST method */
-
-    // Prepare GET method for HTTP request
-    this.url = url;
-    HttpGet get = new HttpGet(url.toString());
-    get.addHeader("User-Agent", http.getUserAgent());
-    get.addHeader("Accept-Language", "en-us,en-gb,en;q=0.7,*;q=0.3");
-    get.addHeader("Accept-Charset", "utf-8,ISO-8859-1;q=0.7,*;q=0.7");
-    get.addHeader("Accept", "text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
-    get.addHeader("Accept-Encoding", "x-gzip, gzip, deflate");
-    if (page.getModifiedTime() > 0) {
-        get.addHeader("If-Modified-Since", HttpDateFormat.toString(page.getModifiedTime()));
+    if (page.getMetadata().containsKey(company_key))
+    {
+        /* out interest */
+        String name = Bytes.toString(page.getMetadata().get(company_key));
+        schema = repo.getCompanySchema(name);
+        if ( schema == null ) {
+            Http.LOG.warn(url.toString() + " schema not configured");
+            return;
+        } else {
+            Http.LOG.info("url for company" + name);
+        }
     }
 
-    /* Set HTTP parameters
-    HttpParams params = new BasicHttpParams();
-    params.setParameter("key1", "value1");
-    params.setParameter("key2", "value2");
-    params.setParameter("key3", "value3");
-    get.setParams(params);
-    */
+    this.url = url;
 
-    // XXX (ab) not sure about this... the default is to retry 3 times; if
-    // XXX the request body was sent the method is not retried, so there is
-    // XXX little danger in retrying...
-    // params.setParameter(HttpMethodParams.RETRY_HANDLER, null);
+    if ( schema.method().equalsIgnoreCase("GET") ) {
+       request = new HttpGet(url.toString());
+    } else {
+       request = new HttpPost(url.toString());
+       //List <NameValuePair> nvps = new ArrayList <NameValuePair>();
+       //nvps.add(new BasicNameValuePair("username", "vip"));
+       //nvps.add(new BasicNameValuePair("password", "secret"));
+       //request.setEntity(new UrlEncodedFormEntity(nvps));
+
+       /* Set HTTP parameters
+       HttpParams params = new BasicHttpParams();
+       params.setParameter("key1", "value1");
+       params.setParameter("key2", "value2");
+       params.setParameter("key3", "value3");
+       request.setParams(params);
+       */
+       if (schema.data() != null) ((HttpPost)request).setEntity(new StringEntity(schema.data()));
+       Http.LOG.info("using POST for company");
+    }
+
+    request.addHeader("User-Agent", http.getUserAgent());
+    request.addHeader("Accept-Language", "en-us,en-gb,en;q=0.7,*;q=0.3");
+    request.addHeader("Accept-Charset", "utf-8,ISO-8859-1;q=0.7,*;q=0.7");
+    request.addHeader("Accept", "text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
+    request.addHeader("Accept-Encoding", "x-gzip, gzip, deflate");
+    if (page.getModifiedTime() > 0) {
+       request.addHeader("If-Modified-Since", HttpDateFormat.toString(page.getModifiedTime()));
+    }
+
     try {
-      CloseableHttpResponse rsp = http.getClient().execute(get);
+      CloseableHttpResponse rsp = http.getClient().execute(request);
       code = rsp.getStatusLine().getStatusCode();
       HttpEntity entity = rsp.getEntity();
 
@@ -147,7 +200,7 @@ public class HttpResponse implements Response {
         if (in != null) {
           in.close();
         }
-        get.abort();
+        request.abort();
       }
 
       StringBuilder fetchTrace = null;
@@ -192,7 +245,7 @@ public class HttpResponse implements Response {
         Http.LOG.trace(fetchTrace.toString());
       }
     } finally {
-      get.releaseConnection();
+      request.releaseConnection();
     }
   }
 

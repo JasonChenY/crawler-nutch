@@ -112,6 +112,7 @@ public class Http extends HttpBase {
     static {
         FIELDS.add(WebPage.Field.MODIFIED_TIME);
         FIELDS.add(WebPage.Field.HEADERS);
+        FIELDS.add(Field.METADATA);
     }
 
     @Override

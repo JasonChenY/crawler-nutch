@@ -90,6 +90,8 @@ public class CompanySchemaRepository {
 
           CompanySchema companySchema = new CompanySchema(name);
           companySchema.url((String) json.get("url"));
+          companySchema.method((String)json.get("method"));
+          companySchema.data((String)json.get("data"));
 
           JSONObject page_list = (JSONObject)json.get("page_list");
           companySchema.page_list_schema((String)page_list.get("schema"));

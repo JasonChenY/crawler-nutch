@@ -19,6 +19,8 @@ package org.apache.nutch.companyschema;
 public class CompanySchema {
     private String name;
     private String url;
+    private String method;
+    private String data;
     private String page_list_schema;
     private String page_list_pattern;
     private int page_list_increment;
@@ -29,12 +31,23 @@ public class CompanySchema {
     private String job_location;
     private String job_date;
 
-    public CompanySchema(String n) { name = n; }
+    public CompanySchema(String n) { name = n; method = "GET"; }
     public String name() { return name; }
     public void name(String n) { name = n; }
 
     public String url() { return url; }
     public void url(String u) { url = u; }
+
+    public String method() { return method; }
+    public void method(String m) {
+        if ( m != null && m.equalsIgnoreCase("POST") )
+            method = "POST";
+        else
+            method = "GET";
+    }
+
+    public String data() { return data; }
+    public void data(String d) { data = d; }
 
     public String page_list_schema() { return page_list_schema; }
     public void page_list_schema(String schema) { page_list_schema = schema; }
@@ -66,6 +79,7 @@ public class CompanySchema {
     public void print(){
         System.out.println("name:"+name);
         System.out.println("url"+url);
+        System.out.println("method"+method);
         System.out.println("page_list_schema:" + page_list_schema);
         System.out.println("page_list_pattern:" + page_list_pattern);
         System.out.println("page_list_incr:" + page_list_increment);
