@@ -31,6 +31,9 @@ import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 //import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
+import org.apache.http.util.EntityUtils;
+import org.apache.http.client.entity.GzipDecompressingEntity;
+import org.apache.http.client.entity.DeflateDecompressingEntity;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpRequestBase;
@@ -41,6 +44,7 @@ import org.apache.http.entity.StringEntity;
 
 // Nutch imports
 import org.apache.http.client.methods.HttpPost;
+import org.apache.nutch.companyschema.CompanyUtils;
 import org.apache.nutch.companyschema.CompanySchema;
 import org.apache.nutch.companyschema.CompanySchemaRepository;
 import org.apache.nutch.metadata.Metadata;
@@ -49,8 +53,6 @@ import org.apache.nutch.net.protocols.HttpDateFormat;
 import org.apache.nutch.net.protocols.Response;
 import org.apache.nutch.protocol.http.api.HttpBase;
 import org.apache.nutch.storage.WebPage;
-
-import org.apache.nutch.companyschema.*;
 
 import java.nio.ByteBuffer;
 import java.util.Iterator;
@@ -69,7 +71,7 @@ public class HttpResponse implements Response {
   private int code;
   private Metadata headers = new SpellCheckedMetadata();
   private static CompanySchemaRepository repo;
-  private static Utf8 company_key = new Utf8("__company__");
+
   /**
    * Fetches the given <code>url</code> and prepares HTTP response.
    * 
@@ -93,40 +95,19 @@ public class HttpResponse implements Response {
     CompanySchema schema = null;
     HttpRequestBase request;
 
-    if ( repo == null ) repo = new CompanySchemaRepository(http.getConf());
-      /*
-      Map<CharSequence, ByteBuffer> metadata = page.getMetadata();
-      StringBuffer sb = new StringBuffer();
-      if (metadata != null) {
-          Iterator<Entry<CharSequence, ByteBuffer>> iterator = metadata.entrySet()
-                  .iterator();
-          while (iterator.hasNext()) {
-              Entry<CharSequence, ByteBuffer> entry = iterator.next();
-              sb.append(entry.getKey().toString()).append(" : \t")
-                      .append(Bytes.toString(entry.getValue())).append("\n");
-          }
-          Http.LOG.info("metadata: " + sb.toString());
-      } else Http.LOG.warn("no metadata");
-      */
-    /* Here to check some fields inside page to determine whether use GET or POST method */
-    if (page.getMetadata().containsKey(company_key))
-    {
-        /* out interest */
-        String name = Bytes.toString(page.getMetadata().get(company_key));
-        schema = repo.getCompanySchema(name);
-        if ( schema == null ) {
-            Http.LOG.warn(url.toString() + " schema not configured");
-            return;
-        } else {
-            Http.LOG.info("url for company" + name);
-        }
+    if ( repo == null ) repo = CompanySchemaRepository.getInstance(http.getConf());
+
+    String name = CompanyUtils.getCompanyName(page);
+    schema = repo.getCompanySchema(name);
+    if ( schema == null ) {
+        Http.LOG.warn(url.toString() + " schema not configured");
+    } else {
+        Http.LOG.info("url for company: " + name);
     }
 
     this.url = url;
 
-    if ( schema.method().equalsIgnoreCase("GET") ) {
-       request = new HttpGet(url.toString());
-    } else {
+    if ( (schema != null) && schema.method().equalsIgnoreCase("POST") ) {
        request = new HttpPost(url.toString());
        //List <NameValuePair> nvps = new ArrayList <NameValuePair>();
        //nvps.add(new BasicNameValuePair("username", "vip"));
@@ -140,8 +121,21 @@ public class HttpResponse implements Response {
        params.setParameter("key3", "value3");
        request.setParams(params);
        */
-       if (schema.data() != null) ((HttpPost)request).setEntity(new StringEntity(schema.data()));
-       Http.LOG.info("using POST for company");
+       if ( page.getMetadata().containsKey(CompanyUtils.company_dyn_data)) {
+           String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
+           ((HttpPost)request).setEntity(new StringEntity(data));
+           request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+       } else {
+           if (schema.data() != null) {
+               ((HttpPost) request).setEntity(new StringEntity(schema.data()));
+               request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+               Http.LOG.info("post data: " + schema.data());
+           }
+       }
+
+       Http.LOG.info("using POST for url:" + url.toString());
+    } else {
+       request = new HttpGet(url.toString());
     }
 
     request.addHeader("User-Agent", http.getUserAgent());
@@ -162,7 +156,7 @@ public class HttpResponse implements Response {
       for (int i = 0; i < heads.length; i++) {
         headers.set(heads[i].getName(), heads[i].getValue());
       }
-
+      /*
       // Limit download size
       int contentLength = Integer.MAX_VALUE;
       String contentLengthString = headers.get(Response.CONTENT_LENGTH);
@@ -214,6 +208,7 @@ public class HttpResponse implements Response {
           if (getHeader(Response.LOCATION) != null)
               fetchTrace.append("; Location: " + getHeader(Response.LOCATION));
       }
+
       // Extract gzip, x-gzip and deflate content
       if (content != null) {
             // check if we have to uncompress it
@@ -230,19 +225,26 @@ public class HttpResponse implements Response {
                   fetchTrace.append("; extracted to " + content.length + " bytes");
           }
       }
+      */
 
-      // add headers in metadata to row
+      String contentEncoding = headers.get(Response.CONTENT_ENCODING);
+      if (contentEncoding != null && Http.LOG.isTraceEnabled())
+          Http.LOG.info("; Content-Encoding: " + contentEncoding);
+      if ("gzip".equals(contentEncoding) || "x-gzip".equals(contentEncoding)) {
+          entity = new GzipDecompressingEntity(entity);
+      } else if ("deflate".equals(contentEncoding)) {
+          entity = new DeflateDecompressingEntity(entity);
+      }
+
+      content = EntityUtils.toByteArray(entity);
+
+        // add headers in metadata to row
       if (page.getHeaders() != null) {
         page.getHeaders().clear();
       }
 
       for (String key : headers.names()) {
         page.getHeaders().put(new Utf8(key), new Utf8(headers.get(key)));
-      }
-
-      // Logger trace message
-      if (Http.LOG.isTraceEnabled()) {
-        Http.LOG.trace(fetchTrace.toString());
       }
     } finally {
       request.releaseConnection();

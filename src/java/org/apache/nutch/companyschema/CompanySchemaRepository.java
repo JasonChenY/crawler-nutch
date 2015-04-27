@@ -50,7 +50,14 @@ public class CompanySchemaRepository {
 
   private String schemaDir;
 
-  public CompanySchemaRepository(Configuration conf) throws RuntimeException {
+  private static CompanySchemaRepository _instance;
+  public static CompanySchemaRepository getInstance(Configuration conf) throws RuntimeException {
+      if ( _instance == null ) {
+          _instance = new CompanySchemaRepository(conf);
+      }
+      return _instance;
+  }
+  private CompanySchemaRepository(Configuration conf) throws RuntimeException {
     companies = new HashMap<String, CompanySchema>();
     this.conf = new Configuration(conf);
     this.auto = conf.getBoolean("company.schema.auto-load", false);
@@ -96,15 +103,19 @@ public class CompanySchemaRepository {
           JSONObject page_list = (JSONObject)json.get("page_list");
           companySchema.page_list_schema((String)page_list.get("schema"));
           companySchema.page_list_pattern((String) page_list.get("pattern"));
-          companySchema.page_list_increment(Integer.parseInt((String)page_list.get("increment")));
+          companySchema.page_list_increment((String)page_list.get("increment"));
           companySchema.page_list_last((String)page_list.get("last"));
 
-          JSONObject page = (JSONObject)json.get("page");
-          companySchema.job_list_schema((String) page.get("schema"));
-          companySchema.job_link((String)page.get("job_link"));
-          companySchema.job_title((String)page.get("job_title"));
-          companySchema.job_location((String) page.get("job_location"));
-          companySchema.job_date((String)page.get("job_date"));
+          JSONObject job_list = (JSONObject)json.get("job_list");
+          companySchema.job_list_schema((String) job_list.get("schema"));
+          companySchema.job_link((String)job_list.get("job_link"));
+          companySchema.job_title((String)job_list.get("job_title"));
+          companySchema.job_location((String) job_list.get("job_location"));
+          companySchema.job_date((String)job_list.get("job_date"));
+
+          JSONObject job = (JSONObject)json.get("job");
+          companySchema.job_abstract((String)job.get("job_abstract"));
+          companySchema.job_description((String) job.get("job_description"));
 
           return companySchema;
       } catch (Exception e) {
@@ -134,7 +145,7 @@ public class CompanySchemaRepository {
       return;
     }
     Configuration conf = NutchConfiguration.create();
-    CompanySchemaRepository repo = new CompanySchemaRepository(conf);
+    CompanySchemaRepository repo = CompanySchemaRepository.getInstance(conf);
     // args[0] - company name
     CompanySchema d = repo.getCompanySchema(args[0]);
     if (d == null) {

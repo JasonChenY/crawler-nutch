@@ -176,8 +176,14 @@ public class DbUpdateReducer extends
       if (inlinkDist < smallestDist) {
         smallestDist = inlinkDist;
       }
+
       page.getInlinks().put(new Utf8(inlink.getUrl()),
           new Utf8(inlink.getAnchor()));
+
+      /* In general we will only have one item in the inlinkedScoreData array here
+       * Don't like the general webpage, where multiple Anchors might point to same link.
+       * So won't enter this logic any more
+       */
     }
     if (smallestDist != Integer.MAX_VALUE) {
       int oldDistance = Integer.MAX_VALUE;

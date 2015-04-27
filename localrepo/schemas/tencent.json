@@ -4,16 +4,20 @@
     "method" : "GET",
     "page_list" : {
           "schema" : "//main:DIV[@class='pagenav']/main:A[3]/@href",
-          "pattern" : "start=",
+          "pattern" : "start",
           "increment" : "10",
           "last" : "//main:DIV[@class='pagenav']/main:A[last()-1]/text()",
     }, 
-    "page" : {
+    "job_list" : {
           "schema" : "//main:TABLE[@class='tablelist']/TBODY/main:TR[@class='even' or @class='odd']",
           "job_link": "./main:TD[1]/main:A/@href",
           "job_title": "./main:TD[1]/main:A/text()",
           "job_location": "./main:TD[4]/text()",
           "job_date": "./main:TD[5]/text()"
     },
+    "job": {
+          "abstract":"",
+          "description":""
+    }
 }
 

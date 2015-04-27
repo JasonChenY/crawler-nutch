@@ -39,12 +39,14 @@
 
 <property>
   <name>db.max.outlinks.per.page</name>
-  <value>10</value>
+  <value>-1</value>
+  <description>Dont care about how many outlinks, this is decided basing on the page list, job list</description>
 </property>
 
 <property>
   <name>plugin.includes</name>
-  <value>protocol-httpclient4|urlfilter-regex|parse-(html|tika)|index-(basic|anchor)|urlnormalizer-(pass|regex|basic)|scoring-opic|indexer-solr</value>
+  <value>protocol-httpclient4|parse-company|index-(basic|anchor)|urlnormalizer-pass|scoring-opic|indexer-solr</value>
+  <description>dont need urlfilter-regex</description>
 </property>
 
 <property>
@@ -55,6 +57,12 @@
 <property>
   <name>company.schema.dir</name>
   <value>/sdk/tools/apache-nutch-2.3/localrepo/schemas</value>
+</property>
+
+<property>
+  <name>file.content.limit</name>
+  <value>-1</value>
+  <description>Dont care about the content lenght, best effort!</description>
 </property>
 
 </configuration>

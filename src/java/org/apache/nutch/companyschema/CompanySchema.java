@@ -23,13 +23,17 @@ public class CompanySchema {
     private String data;
     private String page_list_schema;
     private String page_list_pattern;
-    private int page_list_increment;
+    private String page_list_increment;
     private String page_list_last;
     private String job_list_schema;
     private String job_link;
     private String job_title;
     private String job_location;
     private String job_date;
+
+    /* for get info from Specific Job link page */
+    private String job_abstract;
+    private String job_description;
 
     public CompanySchema(String n) { name = n; method = "GET"; }
     public String name() { return name; }
@@ -55,8 +59,8 @@ public class CompanySchema {
     public String page_list_pattern() { return page_list_pattern; }
     public void page_list_pattern(String pattern) { page_list_pattern = pattern; }
 
-    public int page_list_increment() { return page_list_increment; }
-    public void page_list_increment(int inc) { page_list_increment = inc; }
+    public String page_list_increment() { return page_list_increment; }
+    public void page_list_increment(String inc) { page_list_increment = inc; }
 
     public String page_list_last() { return page_list_last; }
     public void page_list_last(String last) { page_list_last = last; }
@@ -75,6 +79,12 @@ public class CompanySchema {
 
     public String job_date() { return job_date; }
     public void job_date(String date) { job_date = date; }
+
+    public String job_abstract() { return job_abstract; }
+    public void job_abstract(String date) { job_abstract = date; }
+
+    public String job_description() { return job_description; }
+    public void job_description(String date) { job_description = date; }
 
     public void print(){
         System.out.println("name:"+name);

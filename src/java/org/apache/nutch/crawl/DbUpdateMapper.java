@@ -63,6 +63,22 @@ public class DbUpdateMapper extends
       return;
     }
 
+    /* Because new WebPage already generated in ParseJob,
+     *  and there won't be any links in OutLinks
+     * There is not too much thing can be done by DbUpdateMapper/Reducer already
+     *
+     * Accordingly some possible optimization here:
+     *  which means return directly.
+     * which mean when ParserJob finish generating new WebPage,
+     * Fake something done in DbUpdateRuducer to:
+     *    - clean GENERATE_MARK
+     *    - clean FETCH_MARK
+     *    - clean PARSE_MARK
+     *    - dont setup UPDATEDB_MARK (This will cause the upper condition check return )
+     *
+     * Now still keep the logic to use some scheduling check logic in DbUpdateReducer.
+     */
+
     String url = TableUtil.unreverseUrl(key);
 
     scoreData.clear();
