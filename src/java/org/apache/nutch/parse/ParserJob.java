@@ -91,6 +91,9 @@ public class ParserJob extends NutchTool implements Tool {
 
     private FetchSchedule schedule;
 
+    private boolean removeContent;
+
+    private boolean runtime_debug;
     @Override
     public void setup(Context context) throws IOException {
       Configuration conf = context.getConfiguration();
@@ -101,6 +104,8 @@ public class ParserJob extends NutchTool implements Tool {
           conf.get(GeneratorJob.BATCH_ID, Nutch.ALL_BATCH_ID_STR));
       skipTruncated = conf.getBoolean(SKIP_TRUNCATED, true);
       schedule = FetchScheduleFactory.getFetchSchedule(conf);
+      removeContent = conf.getBoolean("parser.remove.content", true);
+      runtime_debug = conf.getBoolean("runtime.debug", false);
     }
 
     @Override
@@ -194,6 +199,8 @@ public class ParserJob extends NutchTool implements Tool {
 
                            String newreverseurl = TableUtil.reverseUrl(newurl);
                            context.write(newreverseurl, newPage);
+
+                           if ( runtime_debug ) break;
                        }
 
                        /* clear intermediate data */
@@ -249,6 +256,8 @@ public class ParserJob extends NutchTool implements Tool {
                        String newreverseurl = TableUtil.reverseUrl(newurl);
 
                        context.write(newreverseurl, newPage);
+
+                       if ( runtime_debug ) break;
                    }
                    page.getOutlinks().clear();
                }
@@ -257,6 +266,12 @@ public class ParserJob extends NutchTool implements Tool {
            LOG.warn("no company key url enter ParseJob");
        }
       }
+
+      if (removeContent) {
+          /* we have get all the useful information, can remove the page to save disk space */
+          page.setContent(ByteBuffer.wrap(new byte[0]));
+      }
+
       context.write(key, page);
     }
   }

@@ -81,10 +81,10 @@ public class CompanySchema {
     public void job_date(String date) { job_date = date; }
 
     public String job_abstract() { return job_abstract; }
-    public void job_abstract(String date) { job_abstract = date; }
+    public void job_abstract(String abs) { job_abstract = abs; }
 
     public String job_description() { return job_description; }
-    public void job_description(String date) { job_description = date; }
+    public void job_description(String desc) { job_description = desc; }
 
     public void print(){
         System.out.println("name:"+name);
@@ -99,6 +99,8 @@ public class CompanySchema {
         System.out.println("job_title:" + job_title);
         System.out.println("job_location:" + job_location);
         System.out.println("job_date:" + job_date);
+        System.out.println("job_abstract:" + job_abstract);
+        System.out.println("job_description:" + job_description);
     }
 }
 

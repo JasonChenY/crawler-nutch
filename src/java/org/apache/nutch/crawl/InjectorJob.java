@@ -30,6 +30,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.util.StringUtils;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
+import org.apache.nutch.companyschema.CompanyUtils;
 import org.apache.nutch.metadata.Nutch;
 import org.apache.nutch.net.URLFilters;
 import org.apache.nutch.net.URLNormalizers;
@@ -122,13 +123,20 @@ public class InjectorJob extends NutchTool implements Tool {
         url = splits[0];
         for (int s = 1; s < splits.length; s++) {
           // find separation between name and value
+          String metaname="";
+          String metavalue="";
+
           int indexEquals = splits[s].indexOf("=");
           if (indexEquals == -1) {
-            // skip anything without a =
-            continue;
+            // Deem anything without "a =" as company name
+            /* set the entry link type, avoid some config footprint during inject url */
+            metaname = "__company__";
+            metavalue = splits[s];
+          } else {
+            metaname = splits[s].substring(0, indexEquals);
+            metavalue = splits[s].substring(indexEquals + 1);
           }
-          String metaname = splits[s].substring(0, indexEquals);
-          String metavalue = splits[s].substring(indexEquals + 1);
+
           if (metaname.equals(nutchScoreMDName)) {
             try {
               customScore = Float.parseFloat(metavalue);
@@ -166,6 +174,10 @@ public class InjectorJob extends NutchTool implements Tool {
           String valuemd = metadata.get(keymd);
           row.getMetadata().put(new Utf8(keymd),
               ByteBuffer.wrap(valuemd.getBytes()));
+        }
+
+        if ( !CompanyUtils.getCompanyName(row).equals("") ) {
+            CompanyUtils.setEntryLink(row);
         }
 
         if (customScore != -1)

@@ -45,7 +45,7 @@
 
 <property>
   <name>plugin.includes</name>
-  <value>protocol-httpclient4|parse-company|index-(basic|anchor)|urlnormalizer-pass|scoring-opic|indexer-solr</value>
+  <value>protocol-httpclient4|parse-company|index-company|urlnormalizer-pass|scoring-opic|indexer-solr</value>
   <description>dont need urlfilter-regex</description>
 </property>
 
@@ -64,6 +64,19 @@
   <value>-1</value>
   <description>Dont care about the content lenght, best effort!</description>
 </property>
+
+<property>
+  <name>parser.remove.content</name>
+  <value>false</value>
+  <description>Whether parser will remove the huge webpage content</description>
+</property>
+
+<property>
+  <name>runtime.debug</name>
+  <value>true</value>
+  <description>if turned on, will only generate one more list page, and extract 1 job on each list page</description>
+</property>
+
 
 </configuration>
 

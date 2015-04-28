@@ -17,7 +17,7 @@
         "job_date" : "./main:TD[@class='job-table-5']/text()"
    },
    "job": {
-        "abstract" : "//*[@class='job-summary-title']/text()",
-        "description" : "//main:TABLE[@class='job-summary-page']",
+        "job_abstract" : "//*[@class='job-summary-title']/text()",
+        "job_description" : "//main:TABLE[@class='job-summary-page']",
    }
 }

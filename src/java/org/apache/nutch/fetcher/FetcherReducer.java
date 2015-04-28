@@ -675,6 +675,12 @@ public class FetcherReducer extends
             || (skipTruncated && !ParserJob.isTruncated(fit.url, fit.page))) {
           parseUtil.process(key, fit.page);
         }
+
+        /* Optimization option:
+         * turn on the Fetcher parse in configuration file.
+         * Porting the code in ParserMapper here, then don't need ParserJob any more.
+         * but this might cause extension bottle neck for huge website crawling.
+         */
       }
       // remove content if storingContent is false. Content is added to fit.page
       // above

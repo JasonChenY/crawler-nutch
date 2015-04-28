@@ -106,35 +106,44 @@ public class HttpResponse implements Response {
     }
 
     this.url = url;
+    if ( schema != null ) {
+       if ( CompanyUtils.isEntryLink(page) && schema.method().equalsIgnoreCase("POST") ) {
+          request = new HttpPost(url.toString());
+          //List <NameValuePair> nvps = new ArrayList <NameValuePair>();
+          //nvps.add(new BasicNameValuePair("username", "vip"));
+          //nvps.add(new BasicNameValuePair("password", "secret"));
+          //request.setEntity(new UrlEncodedFormEntity(nvps));
 
-    if ( (schema != null) && schema.method().equalsIgnoreCase("POST") ) {
-       request = new HttpPost(url.toString());
-       //List <NameValuePair> nvps = new ArrayList <NameValuePair>();
-       //nvps.add(new BasicNameValuePair("username", "vip"));
-       //nvps.add(new BasicNameValuePair("password", "secret"));
-       //request.setEntity(new UrlEncodedFormEntity(nvps));
-
-       /* Set HTTP parameters
-       HttpParams params = new BasicHttpParams();
-       params.setParameter("key1", "value1");
-       params.setParameter("key2", "value2");
-       params.setParameter("key3", "value3");
-       request.setParams(params);
-       */
-       if ( page.getMetadata().containsKey(CompanyUtils.company_dyn_data)) {
-           String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
-           ((HttpPost)request).setEntity(new StringEntity(data));
-           request.addHeader("Content-Type", "application/x-www-form-urlencoded");
-       } else {
-           if (schema.data() != null) {
-               ((HttpPost) request).setEntity(new StringEntity(schema.data()));
-               request.addHeader("Content-Type", "application/x-www-form-urlencoded");
-               Http.LOG.info("post data: " + schema.data());
-           }
+          /* Set HTTP parameters
+           HttpParams params = new BasicHttpParams();
+           params.setParameter("key1", "value1");
+           params.setParameter("key2", "value2");
+           params.setParameter("key3", "value3");
+           request.setParams(params);
+          */
+          if (schema.data() != null) {
+              ((HttpPost) request).setEntity(new StringEntity(schema.data()));
+              request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+              Http.LOG.info("post data: " + schema.data());
+          }
+          Http.LOG.info("using POST for url:" + url.toString());
+       } /* else if ( CompanyUtils.isListLink(page) && schema.pagelist_method().equalsIgnoreCase("POST") ) {
+           page list should not have any preconfigured POST data, but possible dynamic data
+           * Alibaba case, use POST for page list, this will be finished later,
+           * and we may get the method dynamiclly for some website
+           * but not all website, e.g Alibaba, then we need preconfigure this.
+           *
+          request = new HttpPost(url.toString());
+          if (page.getMetadata().containsKey(CompanyUtils.company_dyn_data)) {
+              String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
+              ((HttpPost) request).setEntity(new StringEntity(data));
+              request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+          }
+       } */ else {
+          request = new HttpGet(url.toString());
        }
-
-       Http.LOG.info("using POST for url:" + url.toString());
     } else {
+       /* default case */
        request = new HttpGet(url.toString());
     }
 

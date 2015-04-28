@@ -16,8 +16,8 @@
           "job_date": "./main:TD[5]/text()"
     },
     "job": {
-          "abstract":"",
-          "description":""
+          "job_abstract":"",
+          "job_description":""
     }
 }
 
