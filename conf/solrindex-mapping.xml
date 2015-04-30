@@ -38,7 +38,7 @@
 		<field dest="boost" source="boost"/>
 		<field dest="digest" source="digest"/>
 		<field dest="tstamp" source="tstamp"/>
-
+        <field dest="job_company" source="job_company"/>
 		<field dest="job_title" source="job_title"/>
 		<field dest="job_location" source="job_location"/>
 		<field dest="job_date" source="job_date"/>

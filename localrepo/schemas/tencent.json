@@ -16,8 +16,8 @@
           "job_date": "./main:TD[5]/text()"
     },
     "job": {
-          "job_abstract":"",
-          "job_description":""
+          "job_abstract":"//main:TD[@id='sharetitle']/text()",
+          "job_description":"//main:UL[@class='squareli']",
     }
 }
 

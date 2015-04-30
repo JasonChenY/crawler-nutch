@@ -65,6 +65,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.DocumentType;
 import org.w3c.dom.NodeList;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -82,6 +83,8 @@ import javax.xml.namespace.NamespaceContext;
 import org.apache.nutch.companyschema.CompanyUtils;
 import org.apache.nutch.companyschema.CompanySchema;
 import org.apache.nutch.companyschema.CompanySchemaRepository;
+
+import org.apache.nutch.indexer.solr.SolrUtils;
 
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
@@ -396,12 +399,15 @@ public class CompanyParser implements Parser {
               String title = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
               title.replaceAll("\\s+", " ");
               /* here need to strip off the invalid char for ibm site */
+              title = SolrUtils.stripNonCharCodepoints(title);
 
               expr = xpath.compile(schema.job_location());
               String location = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
+              location = SolrUtils.stripNonCharCodepoints(location);
 
               expr = xpath.compile(schema.job_date());
               String date = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
+              date = SolrUtils.stripNonCharCodepoints(date);
 
               /* Concatenate the wanted field,
                * either ParserJob or DbUpdateJob can decode out
@@ -425,13 +431,18 @@ public class CompanyParser implements Parser {
       XPathExpression expr = xpath.compile(schema.job_abstract());
       String title = (String) expr.evaluate(doc, XPathConstants.STRING);
       title.replaceAll("\\s+", " ");
+      title = SolrUtils.stripNonCharCodepoints(title);
 
       expr = xpath.compile(schema.job_description());
-      String text = (String) expr.evaluate(doc, XPathConstants.STRING);
-      text.replaceAll("\\s+", " ");
+      String text = "";
+      NodeList nodes = (NodeList)expr.evaluate(doc, XPathConstants.NODESET);
+      for ( int i = 0; i < nodes.getLength(); i++ ) {
+          Node node = nodes.item(i);
+          text += DOM2HTML.toString(node);
+      }
+      text = SolrUtils.stripNonCharCodepoints(text);
 
       LOG.info("Title: " + title + " Description: " + text);
-
       /* something to be done here,
        * we can select don't configure abstract & description in schema file,
        * then fallback to the default html parser implementation, html doc title and full page text.

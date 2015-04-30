@@ -13,11 +13,11 @@
        "schema" : "//main:TBODY[@id='myForm:job-table:tbody_element']/main:TR",
         "job_link" : "./main:TD[@class='job-table-2']/main:A/@href",
         "job_title" : "./main:TD[@class='job-table-2']/main:A/text()",
-        "job_location" : "./main:TD[@class='job-table-3']/text()",
+        "job_location" : "./main:TD[@class='job-table-3']/text()[2]",
         "job_date" : "./main:TD[@class='job-table-5']/text()"
    },
    "job": {
         "job_abstract" : "//*[@class='job-summary-title']/text()",
-        "job_description" : "//main:TABLE[@class='job-summary-page']",
+        "job_description" : "//main:TABLE[@class='job-summary-page']/main:TBODY/main:TR[8]/main:TD[1]",
    }
 }

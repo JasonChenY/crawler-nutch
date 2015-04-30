@@ -110,9 +110,11 @@ public class CompanyIndexingFilter implements IndexingFilter {
      * Page Title is extracted from Job Summary Page
      * Leave it here for future expansion, alike area type.
      **/
+    String job_company = Bytes.toString(page.getMetadata().get(CompanyUtils.company_key));
     String job_title = Bytes.toString(page.getMetadata().get(CompanyUtils.company_job_title));
     String job_location = Bytes.toString(page.getMetadata().get(CompanyUtils.company_job_location));
     String job_date = Bytes.toString(page.getMetadata().get(CompanyUtils.company_job_date));
+    doc.add("job_company", job_company);
     doc.add("job_title", job_title);
     doc.add("job_location", job_location);
     doc.add("job_date", job_date);
