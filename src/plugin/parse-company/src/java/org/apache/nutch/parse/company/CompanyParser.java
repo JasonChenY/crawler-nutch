@@ -86,6 +86,9 @@ import org.apache.nutch.companyschema.CompanySchemaRepository;
 
 import org.apache.nutch.indexer.solr.SolrUtils;
 
+import java.util.Date;
+import org.apache.solr.common.util.DateUtil;
+
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
       .getLogger("org.apache.nutch.parse.company");
@@ -407,7 +410,20 @@ public class CompanyParser implements Parser {
 
               expr = xpath.compile(schema.job_date());
               String date = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
-              date = SolrUtils.stripNonCharCodepoints(date);
+              //date = SolrUtils.stripNonCharCodepoints(date);
+              try {
+                  /* we need use facet.fields on job post date, which need specific date format
+                   * And different company might use different format, need to unify them.
+                   * Fortunately there is already common function in DateUtil, hope can cope with all.
+                   * If not, we might extend the schema to add our own format.
+                   */
+                  Date d = DateUtil.parseDate(date);
+                  date = DateUtil.getThreadLocalDateFormat().format(d);
+              } catch (java.text.ParseException pe) {
+                  LOG.warn(schema.name() + " invalid date format(need extend our schema): " + date);
+                  /* let it continue with current system time */
+                  date = DateUtil.getThreadLocalDateFormat().format(new Date());
+              }
 
               /* Concatenate the wanted field,
                * either ParserJob or DbUpdateJob can decode out

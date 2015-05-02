@@ -138,8 +138,17 @@ public class ParserJob extends NutchTool implements Tool {
         return;
       }
 
+      /* Should reset the ParseStatus here
+       * It is possible in previous round, the parse did succeed
+       * but in new round, parseUtil failed, e.g fetched some wrong page due to network issue.
+         */
+      ParseStatus pstatus = ParseStatus.newBuilder().build();
+      pstatus.setMajorCode((int) ParseStatusCodes.NOTPARSED);
+      page.setParseStatus(pstatus);
+
       parseUtil.process(key, page);
-      ParseStatus pstatus = page.getParseStatus();
+
+      pstatus = page.getParseStatus();
       if (pstatus != null) {
           context.getCounter("ParserStatus",
                   ParseStatusCodes.majorCodes[pstatus.getMajorCode()]).increment(1);
@@ -178,7 +187,8 @@ public class ParserJob extends NutchTool implements Tool {
                } catch (PatternSyntaxException e) {
                    LOG.warn("Failed to compile pattern: " + patternValue + " : " + e);
                }
-               if ( pattern != null ) {
+               if ( pattern != null && url != null ) {
+                   /* at this point, url should not be null, just for safe case */
                    Matcher matcher = pattern.matcher(url);
                    if ( matcher.find() ) {
                        int start = Integer.parseInt(matcher.group(2));
