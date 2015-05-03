@@ -89,6 +89,12 @@ import org.apache.nutch.indexer.solr.SolrUtils;
 import java.util.Date;
 import org.apache.solr.common.util.DateUtil;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
+import org.apache.nutch.crawl.CrawlStatus;
+import org.apache.nutch.crawl.DbUpdaterJob;
+
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
       .getLogger("org.apache.nutch.parse.company");
@@ -110,6 +116,8 @@ public class CompanyParser implements Parser {
 
 
   private CompanySchemaRepository repo;
+
+  private boolean runtime_debug;
 
   private static Collection<WebPage.Field> FIELDS = new HashSet<WebPage.Field>();
 
@@ -292,9 +300,9 @@ public class CompanyParser implements Parser {
       /* main logic to get expected info with xpath */
       if ( CompanyUtils.isEntryLink(page)) {
           parse = getParse_entry(url, page, schema, doc, xpath);
-          parse = getParse_list(url, page, schema, doc, xpath);
+          parse = getParse_list(parse, url, page, schema, doc, xpath);
       } else if ( CompanyUtils.isListLink(page)) {
-          parse = getParse_list(url, page, schema, doc, xpath);
+          parse = getParse_list(null, url, page, schema, doc, xpath);
       } else if ( CompanyUtils.isSummaryLink(page)) {
           parse = getParse_summary(url, page, schema, doc, xpath);
       }
@@ -321,17 +329,10 @@ public class CompanyParser implements Parser {
   }
   private Parse getParse_entry(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException, MalformedURLException {
+      /* Page List URL */
       XPathExpression expr = xpath.compile(schema.page_list_schema());
       String page_list = (String) expr.evaluate(doc, XPathConstants.STRING);
-      LOG.info("page_list schema: " + schema.page_list_schema());
-      LOG.info("page_list url: " + page_list);
-
-      expr = xpath.compile(schema.page_list_last());
-      String page_last = (String) expr.evaluate(doc, XPathConstants.STRING);
-      LOG.info("page_list last page: " + page_last);
-
-      String incr = schema.page_list_increment();
-      String pattern = schema.page_list_pattern();
+      LOG.info("page_list schema: " + schema.page_list_schema() + " Got url: " + page_list);
 
       URL target;
       try {
@@ -345,40 +346,81 @@ public class CompanyParser implements Parser {
           }
           target = new URL(orig, page_list);
       }
+      String page_list_url = target.toString();
 
-      /* It is pitty we can't generate WebPage here directly because plugin cant get the hbase context
-       * Now save url_base, incr and last number in old WebPage,
-       * ParserJob will generate new WebPage basing on these info,
-       * see more comment in ParserJob.java.
-       */
-      /* for POST, we directly use the whole RequestURI as the WebPage url, will checkout it later */
-      //String query = target.getQuery();
-      //String url_base = URLUtil.getPage(target.toString());
-      //page.getMetadata().put(CompanyConsts.company_dyn_data, ByteBuffer.wrap(query.getBytes());
-      page.getMetadata().put(CompanyUtils.company_page_list_url, ByteBuffer.wrap(target.toString().getBytes()));
-      page.getMetadata().put(CompanyUtils.company_page_list_incr, ByteBuffer.wrap(incr.getBytes()));
-      page.getMetadata().put(CompanyUtils.company_page_list_last, ByteBuffer.wrap(page_last.getBytes()));
-      page.getMetadata().put(CompanyUtils.company_page_list_pattern, ByteBuffer.wrap(pattern.getBytes()));
+      /* Last Page Number */
+      expr = xpath.compile(schema.page_list_last());
+      String page_last = (String) expr.evaluate(doc, XPathConstants.STRING);
+      LOG.info("page_list Got last page: " + page_last);
+      int last = 0;
+      try {
+          last = Integer.parseInt(page_last);
+      } catch (NumberFormatException e) {
+          LOG.error("failed to parse page increment or page last");
+          return null;
+      }
 
-      /* This fall through to parse the job list
-      * but setup the correspoding return parse in case the job list parse for first page failed
-      * then we still can continue to fetch the 2nd/3rd page
-      * */
+      /* Page number Pattern */
+      String patternValue = schema.page_list_pattern();
+      patternValue = "(" + patternValue + "=)(\\d*)";
+      Pattern pattern = null;
+      try {
+          pattern = Pattern.compile(patternValue);
+      } catch (PatternSyntaxException e) {
+          LOG.warn("Failed to compile pattern: " + patternValue + " : " + e);
+          return null;
+      }
+
+      /* Page Interval */
+      int incr = 0;
+      try {
+          incr = Integer.parseInt(schema.page_list_increment());
+      } catch (NumberFormatException e) {
+          LOG.error("failed to parse page increment or page last");
+          return null;
+      }
+
       ParseStatus status = ParseStatus.newBuilder().build();
       status.setMajorCode((int) ParseStatusCodes.SUCCESS);
       Parse parse = new Parse("page list", "page list", new Outlink[0], status);
+
+      Matcher matcher = pattern.matcher(page_list_url);
+      if ( matcher.find() ) {
+          int start = Integer.parseInt(matcher.group(2));
+          String prefix = matcher.group(1);
+          for (int i = start; i <= last; i += incr ) {
+              String subsitute = prefix + Integer.toString(i);
+              String newurl = matcher.replaceAll(subsitute);
+
+              WebPage  newPage = WebPage.newBuilder().build();
+              newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+              CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
+              CompanyUtils.setListLink(newPage);
+              newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+              parse.addPage(newurl, newPage);
+              if ( runtime_debug ) break;
+          }
+      } else {
+          LOG.error("failed to find page list pattern");
+      }
+
       return parse;
   }
-  private Parse getParse_list(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
+  private Parse getParse_list(Parse parse, String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException, MalformedURLException {
       XPathExpression expr = xpath.compile(schema.job_list_schema());
       NodeList rows = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
-      Outlink[] outlinks = new Outlink[0];
-      ArrayList<Outlink> l = new ArrayList<Outlink>();
+
       if ( rows == null  || rows.getLength() == 0 ) {
           LOG.info(" no jobs in url : " + url);
       } else {
           LOG.info("Found " + rows.getLength() + "jobs");
+          if ( parse == null ) {
+              ParseStatus status = ParseStatus.newBuilder().build();
+              status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+              parse = new Parse("job list", "job list", new Outlink[0], status);
+          }
           for ( int i = 0; i < rows.getLength(); i++ ) {
               Element row = (Element)rows.item(i);
               expr = xpath.compile(schema.job_link());
@@ -425,21 +467,22 @@ public class CompanyParser implements Parser {
                   date = DateUtil.getThreadLocalDateFormat().format(new Date());
               }
 
-              /* Concatenate the wanted field,
-               * either ParserJob or DbUpdateJob can decode out
-               * and save them as MetaData in newly generated WebPage
-               * a little bit ugly, the correct way should use a subclass of WebPage,
-               * but will have huge impaction on many codes.
-               */
-              LOG.info(title + "##" + location + "##" + date);
-              l.add(new Outlink(target.toString(), title + "##" + location + "##" + date));
+              WebPage  newPage = WebPage.newBuilder().build();
+              newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+              CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
+              CompanyUtils.setSummaryLink(newPage);
+
+              newPage.getMetadata().put(CompanyUtils.company_job_title, ByteBuffer.wrap(title.getBytes()));
+              newPage.getMetadata().put(CompanyUtils.company_job_location, ByteBuffer.wrap(location.getBytes()));
+              newPage.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(date.getBytes()));
+
+              newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+              parse.addPage(target.toString(), newPage);
+
+              if ( runtime_debug ) break;
           }
       }
-      outlinks = l.toArray(new Outlink[l.size()]);
-
-      ParseStatus status = ParseStatus.newBuilder().build();
-      status.setMajorCode((int) ParseStatusCodes.SUCCESS);
-      Parse parse = new Parse("job list", "job list", outlinks, status);
       return parse;
   }
   private Parse getParse_summary(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
@@ -474,6 +517,7 @@ public class CompanyParser implements Parser {
     this.defaultCharEncoding = getConf().get(
         "parser.character.encoding.default", "windows-1252");
     this.repo = CompanySchemaRepository.getInstance(conf);
+    this.runtime_debug = conf.getBoolean("runtime.debug", false);
   }
 
   public Configuration getConf() {

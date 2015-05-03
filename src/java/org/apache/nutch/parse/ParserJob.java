@@ -46,10 +46,6 @@ import org.apache.gora.filter.FilterOp;
 import org.apache.gora.filter.SingleFieldValueFilter;
 import org.apache.gora.mapreduce.GoraMapper;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
-
 public class ParserJob extends NutchTool implements Tool {
 
   public static final Logger LOG = LoggerFactory.getLogger(ParserJob.class);
@@ -93,7 +89,6 @@ public class ParserJob extends NutchTool implements Tool {
 
     private boolean removeContent;
 
-    private boolean runtime_debug;
     @Override
     public void setup(Context context) throws IOException {
       Configuration conf = context.getConfiguration();
@@ -105,7 +100,6 @@ public class ParserJob extends NutchTool implements Tool {
       skipTruncated = conf.getBoolean(SKIP_TRUNCATED, true);
       schedule = FetchScheduleFactory.getFetchSchedule(conf);
       removeContent = conf.getBoolean("parser.remove.content", true);
-      runtime_debug = conf.getBoolean("runtime.debug", false);
     }
 
     @Override
@@ -138,152 +132,53 @@ public class ParserJob extends NutchTool implements Tool {
         return;
       }
 
-      /* Should reset the ParseStatus here
-       * It is possible in previous round, the parse did succeed
-       * but in new round, parseUtil failed, e.g fetched some wrong page due to network issue.
-         */
-      ParseStatus pstatus = ParseStatus.newBuilder().build();
-      pstatus.setMajorCode((int) ParseStatusCodes.NOTPARSED);
-      page.setParseStatus(pstatus);
+      Parse parse = parseUtil.process(key, page);
 
-      parseUtil.process(key, page);
-
-      pstatus = page.getParseStatus();
+      ParseStatus pstatus = page.getParseStatus();
       if (pstatus != null) {
           context.getCounter("ParserStatus",
                   ParseStatusCodes.majorCodes[pstatus.getMajorCode()]).increment(1);
       }
 
-      if ( page.getParseStatus() != null && ParseStatusUtils.isSuccess(page.getParseStatus())) {
-      /*
-       * create new WebPages here, then don't need transfer info to DbUpdateJob.
-       * When it is done, need clear the page.getOutlinks()
-       * And clear the page.getMeta().__company_dyn_data__
-       *
-       * Benefit: We don't need consider db.update.max.inlinks and distance.
-       * And also it is difficult to pass some meta data info after DbUpdateMapper
-       *
-       **/
-       if ( !CompanyUtils.getCompanyName(page).equals("")) {
-           LOG.info("ParseJob for company: " + CompanyUtils.getCompanyName(page));
-           if ( CompanyUtils.isEntryLink(page) ) {
-               String url = Bytes.toString(page.getMetadata().get(CompanyUtils.company_page_list_url));
-               String incr_str = Bytes.toString(page.getMetadata().get(CompanyUtils.company_page_list_incr));
-               String last_str = Bytes.toString(page.getMetadata().get(CompanyUtils.company_page_list_last));
-               int incr = 0;
-               int last = 0;
-               try {
-                   incr = Integer.parseInt(incr_str);
-                   last = Integer.parseInt(last_str);
-               } catch (NumberFormatException e) {
-                   LOG.error("failed to parse page increment or page last");
-               }
-               String patternValue = Bytes.toString(page.getMetadata().get(CompanyUtils.company_page_list_pattern));
-               //String url_parameter = Bytes.toString(page.getMetadata().get(CompanyConsts.company_dyn_data));
-               patternValue = "(" + patternValue + "=)(\\d*)";
-               Pattern pattern = null;
-               try {
-                   pattern = Pattern.compile(patternValue);
-               } catch (PatternSyntaxException e) {
-                   LOG.warn("Failed to compile pattern: " + patternValue + " : " + e);
-               }
-               if ( pattern != null && url != null ) {
-                   /* at this point, url should not be null, just for safe case */
-                   Matcher matcher = pattern.matcher(url);
-                   if ( matcher.find() ) {
-                       int start = Integer.parseInt(matcher.group(2));
-                       String prefix = matcher.group(1);
-                       for (int i = start; i <= last; i += incr ) {
-                           String subsitute = prefix + Integer.toString(i);
-                           String newurl = matcher.replaceAll(subsitute);
-
-                           /* Generate new WebPage */
-                           WebPage  newPage = WebPage.newBuilder().build();
-                           schedule.initializeSchedule(newurl, newPage);
-                           newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                           CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
-                           CompanyUtils.setListLink(newPage);
-
-                           /* is this necessary ? */
-                           newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-
-                           String newreverseurl = TableUtil.reverseUrl(newurl);
-                           context.write(newreverseurl, newPage);
-
-                           if ( runtime_debug ) break;
-                       }
-
-                       /* clear intermediate data */
-                       page.getMetadata().remove(CompanyUtils.company_page_list_url);
-                       page.getMetadata().remove(CompanyUtils.company_page_list_incr);
-                       page.getMetadata().remove(CompanyUtils.company_page_list_last);
-                       page.getMetadata().remove(CompanyUtils.company_page_list_pattern);
-                   } else {
-                       LOG.warn("failed to find pattern" + patternValue + "from:" + url);
-                   }
-               }
-           }
-
-           /* continue processing job list for either type 1 and type 2 */
-           if ( CompanyUtils.isEntryLink(page)|| CompanyUtils.isListLink(page) ) {
-               Map<CharSequence, CharSequence> outlinks = page.getOutlinks();
-               if (outlinks != null) {
-                   for (Map.Entry<CharSequence, CharSequence> e : outlinks.entrySet()) {
-                       /* decode out job title, location and date */
-                       String newurl = e.getKey().toString();
-                       String anchor = e.getValue().toString();
-                       String job_title = "";
-                       String job_location = "";
-                       String job_date = "";
-
-                       try {
-                           Pattern pattern = Pattern.compile("(.*)##(.*)##(.*)");
-                           Matcher matcher = pattern.matcher(anchor);
-                           if ( matcher.find() ) {
-                               job_title = matcher.group(1);
-                               job_location = matcher.group(2);
-                               job_date = matcher.group(3);
-                           } else {
-                               LOG.warn("something wrong in outlinks, failed to parse job detail");
-                           }
-                       } catch (PatternSyntaxException ee) {
-                           LOG.warn("Failed to compile pattern");
-                       }
-
-                       /* Generate new WebPage */
-                       WebPage  newPage = WebPage.newBuilder().build();
-                       schedule.initializeSchedule(newurl, newPage);
-                       newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                       CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
-                       CompanyUtils.setSummaryLink(newPage);
-
-                       newPage.getMetadata().put(CompanyUtils.company_job_title, ByteBuffer.wrap(job_title.getBytes()));
-                       newPage.getMetadata().put(CompanyUtils.company_job_location, ByteBuffer.wrap(job_location.getBytes()));
-                       newPage.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(job_date.getBytes()));
-
-                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-
-                       String newreverseurl = TableUtil.reverseUrl(newurl);
-
-                       context.write(newreverseurl, newPage);
-
-                       if ( runtime_debug ) break;
-                   }
-                   page.getOutlinks().clear();
-               }
-           }
-       } else {
-           LOG.warn("no company key url enter ParseJob");
-       }
+      if ( parse != null ) {
+          GenerateWebPage(page, parse, context);
       }
 
       if (removeContent) {
-          /* we have get all the useful information, can remove the page to save disk space */
-          page.setContent(ByteBuffer.wrap(new byte[0]));
+         /* we have get all the useful information, can remove the page to save disk space */
+         page.setContent(ByteBuffer.wrap(new byte[0]));
       }
 
       context.write(key, page);
     }
+
+    /* Private Function to generate WebPage into Context directly basing on information from Parse
+     * So the main functionality is done insiding parse plugin.
+     */
+      private void GenerateWebPage(WebPage page, Parse parse, Context context) {
+          if ( CompanyUtils.getCompanyName(page).equals("")) {
+              LOG.warn("no company key url enter ParseJob");
+              return;
+          }
+          Map<String, WebPage> newPages = parse.getPages();
+          if ( newPages == null ) {
+              return;
+          }
+          LOG.info("GenerateWebPage for company: " + CompanyUtils.getCompanyName(page));
+
+          for (Map.Entry<String, WebPage> e : newPages.entrySet()) {
+              String newurl = e.getKey();
+              WebPage newPage = e.getValue();
+              schedule.initializeSchedule(newurl, newPage);
+              try {
+                  String newreverseurl = TableUtil.reverseUrl(newurl);
+                  context.write(newreverseurl, newPage);
+                  LOG.info("Generating: " + newurl);
+              } catch (Exception ee) {
+                  LOG.warn("Failed to write new page to db" + newurl);
+              }
+          }
+      }
   }
 
   public ParserJob() {

@@ -67,7 +67,7 @@
 
 <property>
   <name>parser.remove.content</name>
-  <value>false</value>
+  <value>true</value>
   <description>Whether parser will remove the huge webpage content</description>
 </property>
 

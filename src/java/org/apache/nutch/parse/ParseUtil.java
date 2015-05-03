@@ -23,15 +23,16 @@ import org.apache.avro.util.Utf8;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.util.StringUtils;
-import org.apache.nutch.crawl.CrawlStatus;
-import org.apache.nutch.crawl.Signature;
-import org.apache.nutch.crawl.SignatureFactory;
+import org.apache.nutch.companyschema.CompanyUtils;
+import org.apache.nutch.crawl.*;
 import org.apache.nutch.fetcher.FetcherJob;
 import org.apache.nutch.net.URLFilterException;
 import org.apache.nutch.net.URLFilters;
 import org.apache.nutch.net.URLNormalizers;
 import org.apache.nutch.storage.Mark;
+import org.apache.nutch.storage.ParseStatus;
 import org.apache.nutch.storage.WebPage;
+import org.apache.nutch.util.Bytes;
 import org.apache.nutch.util.TableUtil;
 import org.apache.nutch.util.URLUtil;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
+import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -165,7 +167,7 @@ public class ParseUtil extends Configured {
    * @param key
    * @param page
    */
-  public void process(String key, WebPage page) {
+  public Parse process(String key, WebPage page) {
     String url = TableUtil.unreverseUrl(key);
     byte status = page.getStatus().byteValue();
     if (status != CrawlStatus.STATUS_FETCHED) {
@@ -173,8 +175,15 @@ public class ParseUtil extends Configured {
         LOG.debug("Skipping " + url + " as status is: "
             + CrawlStatus.getName(status));
       }
-      return;
+      return null;
     }
+    /* Should reset the ParseStatus here
+     * It is possible in previous round, the parse did succeed
+     * but in new round, parseUtil failed, e.g fetched some wrong page due to network issue.
+     */
+    ParseStatus pstatus = ParseStatus.newBuilder().build();
+    pstatus.setMajorCode((int) ParseStatusCodes.NOTPARSED);
+    page.setParseStatus(pstatus);
 
     Parse parse;
     try {
@@ -182,18 +191,19 @@ public class ParseUtil extends Configured {
     } catch (ParserNotFound e) {
       // do not print stacktrace for the fact that some types are not mapped.
       LOG.warn("No suitable parser found: " + e.getMessage());
-      return;
+      return null;
     } catch (final Exception e) {
       LOG.warn("Error parsing: " + url + ": "
           + StringUtils.stringifyException(e));
-      return;
+      return null;
     }
 
     if (parse == null) {
-      return;
+      LOG.warn("Failed to get any Parse for " + url);
+      return null;
     }
 
-    org.apache.nutch.storage.ParseStatus pstatus = parse.getParseStatus();
+    pstatus = parse.getParseStatus();
     page.setParseStatus(pstatus);
     if (ParseStatusUtils.isSuccess(pstatus)) {
       if (pstatus.getMinorCode() == ParseStatusCodes.SUCCESS_REDIRECT) {
@@ -203,20 +213,20 @@ public class ParseUtil extends Configured {
           newUrl = normalizers.normalize(newUrl, URLNormalizers.SCOPE_FETCHER);
           if (newUrl == null) {
             LOG.warn("redirect normalized to null " + url);
-            return;
+            return parse;
           }
           try {
             newUrl = filters.filter(newUrl);
           } catch (URLFilterException e) {
-            return;
+            return parse;
           }
           if (newUrl == null) {
             LOG.warn("redirect filtered to null " + url);
-            return;
+            return parse;
           }
         } catch (MalformedURLException e) {
           LOG.warn("malformed url exception parsing redirect " + url);
-          return;
+          return parse;
         }
         page.getOutlinks().put(new Utf8(newUrl), new Utf8());
         page.getMetadata().put(FetcherJob.REDIRECT_DISCOVERED,
@@ -226,7 +236,7 @@ public class ParseUtil extends Configured {
               refreshTime < FetcherJob.PERM_REFRESH_TIME);
           if (reprUrl == null) {
             LOG.warn("reprUrl==null for " + url);
-            return;
+            return null;
           } else {
             page.setReprUrl(new Utf8(reprUrl));
           }
@@ -295,5 +305,6 @@ public class ParseUtil extends Configured {
         }
       }
     }
+    return parse;
   }
 }

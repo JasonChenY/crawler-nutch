@@ -16,12 +16,17 @@
  ******************************************************************************/
 package org.apache.nutch.parse;
 
+import org.apache.nutch.storage.WebPage;
+
+import java.util.HashMap;
+
 public class Parse {
 
   private String text;
   private String title;
   private Outlink[] outlinks;
   private org.apache.nutch.storage.ParseStatus parseStatus;
+  public java.util.HashMap<String, WebPage> generatedPages;
 
   public Parse() {
   }
@@ -32,6 +37,15 @@ public class Parse {
     this.title = title;
     this.outlinks = outlinks;
     this.parseStatus = parseStatus;
+    this.generatedPages = new HashMap<String, WebPage>();
+  }
+
+  public void addPage(String url, WebPage page) {
+    generatedPages.put(url, page);
+  }
+
+  public HashMap<String, WebPage> getPages() {
+    return generatedPages;
   }
 
   public String getText() {
