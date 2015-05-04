@@ -18,8 +18,8 @@ package org.apache.nutch.companyschema;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.nutch.util.NutchConfiguration;
+//import org.apache.hadoop.conf.Configuration;
+//import org.apache.nutch.util.NutchConfiguration;
 
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.ContentHandler;
@@ -42,8 +42,6 @@ public class CompanySchemaRepository {
 
   private HashMap<String, CompanySchema> companies;
 
-  private Configuration conf;
-
   public static final Logger LOG = LoggerFactory.getLogger(CompanySchemaRepository.class);
 
   private JSONParser parser;
@@ -51,17 +49,16 @@ public class CompanySchemaRepository {
   private String schemaDir;
 
   private static CompanySchemaRepository _instance;
-  public static CompanySchemaRepository getInstance(Configuration conf) throws RuntimeException {
+  public static CompanySchemaRepository getInstance(String dir) throws RuntimeException {
       if ( _instance == null ) {
-          _instance = new CompanySchemaRepository(conf);
+          _instance = new CompanySchemaRepository(dir);
       }
       return _instance;
   }
-  private CompanySchemaRepository(Configuration conf) throws RuntimeException {
+  private CompanySchemaRepository(String dir) throws RuntimeException {
     companies = new HashMap<String, CompanySchema>();
-    this.conf = new Configuration(conf);
-    this.auto = conf.getBoolean("company.schema.auto-load", false);
-    schemaDir = conf.get("company.schema.dir", "./");
+    //this.auto = conf.getBoolean("company.schema.auto-load", false);
+    schemaDir = dir;
     parser = new JSONParser();
   }
 
@@ -140,13 +137,10 @@ public class CompanySchemaRepository {
 
   public static void main(String[] args) throws Exception {
     if (args.length < 2) {
-      System.err
-          .println("Usage: CompanySchemaRepository name");
+      System.err.println("Usage: CompanySchemaRepository name");
       return;
     }
-    Configuration conf = NutchConfiguration.create();
-    CompanySchemaRepository repo = CompanySchemaRepository.getInstance(conf);
-    // args[0] - company name
+    CompanySchemaRepository repo = CompanySchemaRepository.getInstance("/sdk/tools/apache-nutch-2.3/localrepo/schemas");
     CompanySchema d = repo.getCompanySchema(args[0]);
     if (d == null) {
       System.err.println("Company Schema '" + args[0] + "' not present");

@@ -95,7 +95,7 @@ public class HttpResponse implements Response {
     CompanySchema schema = null;
     HttpRequestBase request;
 
-    if ( repo == null ) repo = CompanySchemaRepository.getInstance(http.getConf());
+    if ( repo == null ) repo = CompanySchemaRepository.getInstance(http.getConf().get("company.schema.dir", "./"));
 
     String name = CompanyUtils.getCompanyName(page);
     schema = repo.getCompanySchema(name);
@@ -139,6 +139,7 @@ public class HttpResponse implements Response {
               ((HttpPost) request).setEntity(new StringEntity(data));
               request.addHeader("Content-Type", "application/x-www-form-urlencoded");
           }
+
        } */ else {
           request = new HttpGet(url.toString());
        }

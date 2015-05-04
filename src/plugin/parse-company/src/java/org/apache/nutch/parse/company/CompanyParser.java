@@ -516,7 +516,7 @@ public class CompanyParser implements Parser {
     this.conf = conf;
     this.defaultCharEncoding = getConf().get(
         "parser.character.encoding.default", "windows-1252");
-    this.repo = CompanySchemaRepository.getInstance(conf);
+    this.repo = CompanySchemaRepository.getInstance(conf.get("company.schema.dir", "./"));
     this.runtime_debug = conf.getBoolean("runtime.debug", false);
   }
 
