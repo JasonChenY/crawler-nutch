@@ -107,7 +107,7 @@ public class HttpResponse implements Response {
 
     this.url = url;
     if ( schema != null ) {
-       if ( CompanyUtils.isEntryLink(page) && schema.method().equalsIgnoreCase("POST") ) {
+       if ( CompanyUtils.isEntryLink(page) && schema.getL1_method().equalsIgnoreCase("POST") ) {
           request = new HttpPost(url.toString());
           //List <NameValuePair> nvps = new ArrayList <NameValuePair>();
           //nvps.add(new BasicNameValuePair("username", "vip"));
@@ -121,10 +121,10 @@ public class HttpResponse implements Response {
            params.setParameter("key3", "value3");
            request.setParams(params);
           */
-          if (schema.data() != null) {
-              ((HttpPost) request).setEntity(new StringEntity(schema.data()));
+          if (!schema.getL1_postdata().isEmpty()) {
+              ((HttpPost) request).setEntity(new StringEntity(schema.getL1_postdata()));
               request.addHeader("Content-Type", "application/x-www-form-urlencoded");
-              Http.LOG.info("post data: " + schema.data());
+              Http.LOG.debug("post data: " + schema.getL1_postdata());
           }
           Http.LOG.info("using POST for url:" + url.toString());
        } /* else if ( CompanyUtils.isListLink(page) && schema.pagelist_method().equalsIgnoreCase("POST") ) {

@@ -319,7 +319,7 @@ public class CompanyParser implements Parser {
       LOG.error("Failed with the following SAXException: ", e);
       return ParseStatusUtils.getEmptyParse(e, getConf());
     }  catch (XPathExpressionException e) {
-      LOG.error("Failed to parse with schema")  ;
+      LOG.error("Failed to parse with schema" + e.getMessage())  ;
       return ParseStatusUtils.getEmptyParse(e, getConf());
     } catch (Exception e) {
       LOG.error("Failed with the following Exception: ", e);
@@ -330,9 +330,9 @@ public class CompanyParser implements Parser {
   private Parse getParse_entry(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException, MalformedURLException {
       /* Page List URL */
-      XPathExpression expr = xpath.compile(schema.page_list_schema());
+      XPathExpression expr = xpath.compile(schema.getL2_schema_for_nextpage_url());
       String page_list = (String) expr.evaluate(doc, XPathConstants.STRING);
-      LOG.info("page_list schema: " + schema.page_list_schema() + " Got url: " + page_list);
+      LOG.info("page_list schema: " + schema.getL2_schema_for_nextpage_url() + " Got url: " + page_list);
 
       URL target;
       try {
@@ -342,14 +342,14 @@ public class CompanyParser implements Parser {
           try {
               orig = new URL(url);
           } catch (MalformedURLException e2) {
-              orig = new URL(schema.url());
+              orig = new URL(schema.getL1_url());
           }
           target = new URL(orig, page_list);
       }
       String page_list_url = target.toString();
 
       /* Last Page Number */
-      expr = xpath.compile(schema.page_list_last());
+      expr = xpath.compile(schema.getL2_last_page());
       String page_last = (String) expr.evaluate(doc, XPathConstants.STRING);
       LOG.info("page_list Got last page: " + page_last);
       int last = 0;
@@ -361,7 +361,7 @@ public class CompanyParser implements Parser {
       }
 
       /* Page number Pattern */
-      String patternValue = schema.page_list_pattern();
+      String patternValue = schema.getL2_nextpage_pattern();
       patternValue = "(" + patternValue + "=)(\\d*)";
       Pattern pattern = null;
       try {
@@ -374,7 +374,7 @@ public class CompanyParser implements Parser {
       /* Page Interval */
       int incr = 0;
       try {
-          incr = Integer.parseInt(schema.page_list_increment());
+          incr = Integer.parseInt(schema.getL2_nextpage_increment());
       } catch (NumberFormatException e) {
           LOG.error("failed to parse page increment or page last");
           return null;
@@ -409,7 +409,7 @@ public class CompanyParser implements Parser {
   }
   private Parse getParse_list(Parse parse, String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException, MalformedURLException {
-      XPathExpression expr = xpath.compile(schema.job_list_schema());
+      XPathExpression expr = xpath.compile(schema.getL2_schema_for_jobs());
       NodeList rows = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
 
       if ( rows == null  || rows.getLength() == 0 ) {
@@ -423,7 +423,7 @@ public class CompanyParser implements Parser {
           }
           for ( int i = 0; i < rows.getLength(); i++ ) {
               Element row = (Element)rows.item(i);
-              expr = xpath.compile(schema.job_link());
+              expr = xpath.compile(schema.getL2_schema_for_joburl());
               String link = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
               LOG.info("link:" + link);
 
@@ -435,22 +435,22 @@ public class CompanyParser implements Parser {
                   try {
                       orig = new URL(url);
                   } catch (MalformedURLException e2) {
-                      orig = new URL(schema.url());
+                      orig = new URL(schema.getL1_url());
                   }
                   target = new URL(orig, link);
               }
 
-              expr = xpath.compile(schema.job_title());
+              expr = xpath.compile(schema.getL2_job_title());
               String title = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
               title.replaceAll("\\s+", " ");
               /* here need to strip off the invalid char for ibm site */
               title = SolrUtils.stripNonCharCodepoints(title);
 
-              expr = xpath.compile(schema.job_location());
+              expr = xpath.compile(schema.getL2_job_location());
               String location = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
               location = SolrUtils.stripNonCharCodepoints(location);
 
-              expr = xpath.compile(schema.job_date());
+              expr = xpath.compile(schema.getL2_job_date());
               String date = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
               //date = SolrUtils.stripNonCharCodepoints(date);
               try {
@@ -462,7 +462,7 @@ public class CompanyParser implements Parser {
                   Date d = DateUtil.parseDate(date);
                   date = DateUtil.getThreadLocalDateFormat().format(d);
               } catch (java.text.ParseException pe) {
-                  LOG.warn(schema.name() + " invalid date format(need extend our schema): " + date);
+                  LOG.warn(schema.getName() + " invalid date format(need extend our schema): " + date);
                   /* let it continue with current system time */
                   date = DateUtil.getThreadLocalDateFormat().format(new Date());
               }
@@ -487,12 +487,12 @@ public class CompanyParser implements Parser {
   }
   private Parse getParse_summary(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException, MalformedURLException {
-      XPathExpression expr = xpath.compile(schema.job_abstract());
+      XPathExpression expr = xpath.compile(schema.getL3_job_title());
       String title = (String) expr.evaluate(doc, XPathConstants.STRING);
       title.replaceAll("\\s+", " ");
       title = SolrUtils.stripNonCharCodepoints(title);
 
-      expr = xpath.compile(schema.job_description());
+      expr = xpath.compile(schema.getL3_job_description());
       String text = "";
       NodeList nodes = (NodeList)expr.evaluate(doc, XPathConstants.NODESET);
       for ( int i = 0; i < nodes.getLength(); i++ ) {

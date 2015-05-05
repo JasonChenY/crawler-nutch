@@ -18,9 +18,6 @@ package org.apache.nutch.companyschema;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-//import org.apache.hadoop.conf.Configuration;
-//import org.apache.nutch.util.NutchConfiguration;
-
 import org.json.simple.parser.ContainerFactory;
 import org.json.simple.parser.ContentHandler;
 import org.json.simple.parser.JSONParser;
@@ -93,30 +90,43 @@ public class CompanySchemaRepository {
           }
 
           CompanySchema companySchema = new CompanySchema(name);
-          companySchema.url((String) json.get("url"));
-          companySchema.method((String)json.get("method"));
-          companySchema.data((String)json.get("data"));
+          companySchema.setL1_url((String) json.get("l1_url"));
+          companySchema.setL1_method((String) json.get("l1_method"));
+          companySchema.setL1_postdata((String) json.get("l1_postdata"));
 
           JSONObject page_list = (JSONObject)json.get("page_list");
-          companySchema.page_list_schema((String)page_list.get("schema"));
-          companySchema.page_list_pattern((String) page_list.get("pattern"));
-          companySchema.page_list_increment((String)page_list.get("increment"));
-          companySchema.page_list_last((String)page_list.get("last"));
+          if ( page_list != null ) {
+              companySchema.setL2_content_type((String) page_list.get("l2_content-type"));
+              companySchema.setL2_prefix_for_nextpage_url((String) page_list.get("l2_prefix_for_nextpage_url"));
+              companySchema.setL2_schema_for_nextpage_url((String) page_list.get("l2_schema_for_nextpage_url"));
+              companySchema.setL2_nextpage_method((String) page_list.get("l2_nextpage_method"));
+              companySchema.setL2_nextpage_postdata((String) page_list.get("l2_nextpage_postdata"));
+              companySchema.setL2_nextpage_pattern((String) page_list.get("l2_nextpage_pattern"));
+              companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
+              companySchema.setL2_last_page((String) page_list.get("l2_last_page"));
+          }
 
           JSONObject job_list = (JSONObject)json.get("job_list");
-          companySchema.job_list_schema((String) job_list.get("schema"));
-          companySchema.job_link((String)job_list.get("job_link"));
-          companySchema.job_title((String)job_list.get("job_title"));
-          companySchema.job_location((String) job_list.get("job_location"));
-          companySchema.job_date((String)job_list.get("job_date"));
+          if ( job_list != null ) {
+              companySchema.setL2_schema_for_jobs((String) job_list.get("l2_schema_for_jobs"));
+              companySchema.setL2_prefix_for_joburl((String) job_list.get("l2_prefix_for_joburl"));
+              companySchema.setL2_schema_for_joburl((String) job_list.get("l2_schema_for_joburl"));
+              companySchema.setL2_job_title((String) job_list.get("l2_job_title"));
+              companySchema.setL2_job_location((String) job_list.get("l2_job_location"));
+              companySchema.setL2_job_date((String) job_list.get("l2_job_date"));
+              companySchema.setL2_job_description((String) job_list.get("l2_job_description"));
+          }
 
           JSONObject job = (JSONObject)json.get("job");
-          companySchema.job_abstract((String)job.get("job_abstract"));
-          companySchema.job_description((String) job.get("job_description"));
+          if ( job != null ) {
+              companySchema.setL3_job_title((String) job.get("l3_job_title"));
+              companySchema.setL3_job_description((String) job.get("l3_job_description"));
+          }
 
           return companySchema;
       } catch (Exception e) {
           LOG.warn("JSON file parse failed: " + name);
+          e.printStackTrace();
           //fr.close(); if parsing failed, fr will be collected by GC
           return null;
       }
@@ -130,7 +140,7 @@ public class CompanySchemaRepository {
       LOG.info("\tNONE");
     } else {
       for (CompanySchema company : companies.values()) {
-        LOG.info("\t" + company.name());
+        LOG.info("\t" + company.getName());
       }
     }
   }

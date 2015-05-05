@@ -1,23 +1,23 @@
 { 
     "company" : "tencent",
-    "url" : "http://hr.tencent.com/position.php",
-    "method" : "GET",
+    "l1_url" : "http://hr.tencent.com/position.php",
+    "l1_method" : "GET",
     "page_list" : {
-          "schema" : "//main:DIV[@class='pagenav']/main:A[3]/@href",
-          "pattern" : "start",
-          "increment" : "10",
-          "last" : "//main:DIV[@class='pagenav']/main:A[last()-1]/text()",
+          "l2_schema_for_nextpage_url" : "//main:DIV[@class='pagenav']/main:A[3]/@href",
+          "l2_nextpage_pattern" : "start",
+          "l2_nextpage_increment" : "10",
+          "l2_last_page" : "//main:DIV[@class='pagenav']/main:A[last()-1]/text()",
     }, 
     "job_list" : {
-          "schema" : "//main:TABLE[@class='tablelist']/TBODY/main:TR[@class='even' or @class='odd']",
-          "job_link": "./main:TD[1]/main:A/@href",
-          "job_title": "./main:TD[1]/main:A/text()",
-          "job_location": "./main:TD[4]/text()",
-          "job_date": "./main:TD[5]/text()"
+          "l2_schema_for_jobs" : "//main:TABLE[@class='tablelist']/TBODY/main:TR[@class='even' or @class='odd']",
+          "l2_schema_for_joburl": "./main:TD[1]/main:A/@href",
+          "l2_job_title": "./main:TD[1]/main:A/text()",
+          "l2_job_location": "./main:TD[4]/text()",
+          "l2_job_date": "./main:TD[5]/text()"
     },
     "job": {
-          "job_abstract":"//main:TD[@id='sharetitle']/text()",
-          "job_description":"//main:UL[@class='squareli']",
+          "l3_job_title":"//main:TD[@id='sharetitle']/text()",
+          "l3_job_description":"//main:UL[@class='squareli']",
     }
 }
 

@@ -57,7 +57,7 @@ public class CompanyIndexingFilter implements IndexingFilter {
       throws IndexingException {
 
     if (CompanyUtils.isEntryLink(page) || CompanyUtils.isListLink(page)) {
-        LOG.info(url + "don't need to be index, type: " + (CompanyUtils.isEntryLink(page)?"ENTRY":"LIST"));
+        LOG.info(url + " no index, type: " + (CompanyUtils.isEntryLink(page)?"ENTRY":"LIST"));
         return null;
     }
 
