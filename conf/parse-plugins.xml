@@ -38,6 +38,10 @@
 		<plugin id="parse-html" />
 	</mimeType>
 
+    <mimeType name="application/json">
+        <plugin id="parse-company" />
+    </mimeType>
+
 	<mimeType name="application/rss+xml">
 	    <plugin id="parse-tika" />
 	    <plugin id="feed" />

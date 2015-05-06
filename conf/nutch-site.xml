@@ -77,6 +77,12 @@
   <description>if turned on, will only generate one more list page, and extract 1 job on each list page</description>
 </property>
 
+<property>
+  <name>try.to.shortcut.l3page</name>
+  <value>true</value>
+  <description>Alibaba's l2 JSON file contains l3 information already, dont need to fetch any more.
+  </description>
+</property>
 
 </configuration>
 

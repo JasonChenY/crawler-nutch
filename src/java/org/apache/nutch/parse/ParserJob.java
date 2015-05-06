@@ -169,7 +169,16 @@ public class ParserJob extends NutchTool implements Tool {
           for (Map.Entry<String, WebPage> e : newPages.entrySet()) {
               String newurl = e.getKey();
               WebPage newPage = e.getValue();
-              schedule.initializeSchedule(newurl, newPage);
+              if ( newPage.getPrevFetchTime() != 0 ) {
+                  /* Just a flag to make sure that this page won't be fetched before his parent
+                   * we are aiming for a faked Fetched/Parsed WebPage.
+                   */
+                  long cur = System.currentTimeMillis();
+                  schedule.initializeSchedule(newurl, newPage);
+                  schedule.setFetchSchedule(newurl, newPage, 0, 0, cur, cur, 0);
+              } else {
+                  schedule.initializeSchedule(newurl, newPage);
+              }
               try {
                   String newreverseurl = TableUtil.reverseUrl(newurl);
                   context.write(newreverseurl, newPage);

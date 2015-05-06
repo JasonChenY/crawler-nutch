@@ -23,17 +23,17 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.lang.Integer;
+import java.lang.Object;
 import java.lang.String;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
 
 import org.apache.avro.util.Utf8;
 import org.apache.nutch.storage.Mark;
@@ -94,6 +94,14 @@ import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.apache.nutch.crawl.CrawlStatus;
 import org.apache.nutch.crawl.DbUpdaterJob;
+import org.apache.nutch.crawl.Signature;
+import org.apache.nutch.crawl.SignatureFactory;
+
+/* json-path */
+import java.util.List;
+import com.jayway.jsonpath.JsonPath;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.PathNotFoundException;
 
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
@@ -118,6 +126,10 @@ public class CompanyParser implements Parser {
   private CompanySchemaRepository repo;
 
   private boolean runtime_debug;
+
+  private Signature sig;
+
+  private boolean try_to_shortcut_l3page;
 
   private static Collection<WebPage.Field> FIELDS = new HashSet<WebPage.Field>();
 
@@ -220,16 +232,16 @@ public class CompanyParser implements Parser {
            * if return an Empty, then ParseStatus will be FAILED, will try to reparse it again next time.
            * the best way is to Fake a SUCCESS code, won't take care of this uninterested page in future until the max interval comes.
            */
-          LOG.warn(url.toString() + "company_key not found, setup PARSE_MARK, UPDATEDB_MARK, INDEX_MARK or just return null");
+          LOG.warn(url + " company_key not found, setup PARSE_MARK, UPDATEDB_MARK, INDEX_MARK or just return null");
           return null;
       }
 
-      LOG.info("url for company: " + name + "link type: " + CompanyUtils.getLinkType(page));
+      LOG.info(url + " for : " + name + " link type: " + CompanyUtils.getLinkType(page));
       if ( CompanyUtils.getLinkType(page).equals("") ) {
           /* set the entry link type, avoid some config footprint during inject url */
           CompanyUtils.setEntryLink(page);
       } else if ( !CompanyUtils.isEntryLink(page) && !CompanyUtils.isListLink(page) && !CompanyUtils.isSummaryLink(page)) {
-          LOG.warn(url.toString() + " invalid link type" + CompanyUtils.getLinkType(page));
+          LOG.warn(url + " invalid link type" + CompanyUtils.getLinkType(page));
           return null;
       }
 
@@ -262,9 +274,23 @@ public class CompanyParser implements Parser {
         LOG.trace("Parsing...");
       }
 
-      /* parsing with NEKO DOM parser */
-      DOMParser parser = new DOMParser();
-      try {
+      String content_type = "html";
+      Utf8 content_type_key = new Utf8(org.apache.nutch.net.protocols.Response.CONTENT_TYPE);
+      if ( page.getHeaders().containsKey(content_type_key) ) {
+          java.lang.CharSequence content_type_utf8 = page.getHeaders().get(content_type_key);
+          content_type = content_type_utf8.toString();
+          LOG.debug(url + " : " + content_type);
+      }
+
+      /* no better way, we have 3 kinds of pages, two kinds of content type,
+       * which mean a matrix to parse, tried to use unify method,
+       * but becasue of different data type, it make the code even unreadable,
+       * Unforturnately we wont have more cases till now
+       */
+      if ( content_type.toLowerCase().contains("html") ) {
+        /* parsing with NEKO DOM parser */
+        DOMParser parser = new DOMParser();
+        try {
           parser.setFeature("http://cyberneko.org/html/features/scanner/allow-selfclosing-iframe", true);
           parser.setFeature("http://cyberneko.org/html/features/augmentations", true);
           parser.setProperty("http://cyberneko.org/html/properties/default-encoding", defaultCharEncoding);
@@ -272,20 +298,19 @@ public class CompanyParser implements Parser {
           parser.setFeature("http://cyberneko.org/html/features/balance-tags/ignore-outside-content", false);
           parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
           parser.setFeature("http://cyberneko.org/html/features/report-errors", LOG.isTraceEnabled());
-      } catch (SAXException e) {
-      }
-      parser.parse(input);
+          parser.parse(input);
 
-      /* Create xpath */
-      XPathFactory xpathFactory = XPathFactory.newInstance();
-      XPath xpath = xpathFactory.newXPath();
+          Document doc = parser.getDocument();
 
-      /* Setup xpath's namespace */
-      Document doc = parser.getDocument();
-      DocumentType doctype = doc.getDoctype();
-      if ( doctype != null && doctype.getName().equalsIgnoreCase("html") ) {
-          NodeList root = doc.getElementsByTagName("HTML");
-          if (root != null) {
+	      /* Create xpath */
+          XPathFactory xpathFactory = XPathFactory.newInstance();
+          XPath xpath = xpathFactory.newXPath();
+
+          /* Setup xpath's namespace */
+          DocumentType doctype = doc.getDoctype();
+          if ( doctype != null && doctype.getName().equalsIgnoreCase("html") ) {
+            NodeList root = doc.getElementsByTagName("HTML");
+            if (root != null) {
               Element head = (Element) root.item(0);
               final String ns = head.getNamespaceURI();
               LOG.info("namespace: " + ns);
@@ -294,17 +319,31 @@ public class CompanyParser implements Parser {
               }};
               SimpleNamespaceContext namespaces = new SimpleNamespaceContext(prefMap);
               xpath.setNamespaceContext(namespaces);
+            }
           }
-      }
-
-      /* main logic to get expected info with xpath */
-      if ( CompanyUtils.isEntryLink(page)) {
-          parse = getParse_entry(url, page, schema, doc, xpath);
-          parse = getParse_list(parse, url, page, schema, doc, xpath);
-      } else if ( CompanyUtils.isListLink(page)) {
-          parse = getParse_list(null, url, page, schema, doc, xpath);
-      } else if ( CompanyUtils.isSummaryLink(page)) {
-          parse = getParse_summary(url, page, schema, doc, xpath);
+            if ( CompanyUtils.isEntryLink(page)) {
+                parse = getParse_entry_html(url, page, schema, doc, xpath);
+                parse = getParse_list_html(parse, url, page, schema, doc, xpath);
+            } else if ( CompanyUtils.isListLink(page)) {
+                parse = getParse_list_html(null, url, page, schema, doc, xpath);
+            } else if ( CompanyUtils.isSummaryLink(page)) {
+                parse = getParse_summary_html(url, page, schema, doc, xpath);
+            }
+        } catch (SAXException e) {
+	      LOG.warn("Failed to parse " + url + " with DOMParser " + e.getMessage());
+        }       
+      } else if ( content_type.toLowerCase().contains("json") ) {
+	      /* Create JsonReader Context, from that to parse */
+          com.jayway.jsonpath.Configuration JSON_SMART_CONFIGURATION = com.jayway.jsonpath.Configuration.defaultConfiguration();
+          DocumentContext doc = JsonPath.parse(input.getByteStream(), JSON_SMART_CONFIGURATION);
+          if ( CompanyUtils.isEntryLink(page)) {
+              parse = getParse_entry_json(url, page, schema, doc);
+              parse = getParse_list_json(parse, url, page, schema, doc);
+          } else if ( CompanyUtils.isListLink(page)) {
+              parse = getParse_list_json(null, url, page, schema, doc);
+          } else if ( CompanyUtils.isSummaryLink(page)) {
+              /* Summary Page should not be in JSON format */
+          }
       }
     } catch (MalformedURLException e) {
       LOG.error("Failed to generate target URL");
@@ -315,11 +354,11 @@ public class CompanyParser implements Parser {
     } catch (DOMException e) {
       LOG.error("Failed with the following DOMException: ", e);
       return ParseStatusUtils.getEmptyParse(e, getConf());
-    } catch (SAXException e) {
-      LOG.error("Failed with the following SAXException: ", e);
-      return ParseStatusUtils.getEmptyParse(e, getConf());
     }  catch (XPathExpressionException e) {
-      LOG.error("Failed to parse with schema" + e.getMessage())  ;
+      LOG.error("Failed to parse with schema " + e.getMessage())  ;
+      return ParseStatusUtils.getEmptyParse(e, getConf());
+    } catch ( PathNotFoundException e ) {
+      LOG.error("Failed to parse schema with json-path " + e.getMessage())  ;
       return ParseStatusUtils.getEmptyParse(e, getConf());
     } catch (Exception e) {
       LOG.error("Failed with the following Exception: ", e);
@@ -327,39 +366,62 @@ public class CompanyParser implements Parser {
     }
     return parse;
   }
-  private Parse getParse_entry(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
-      throws XPathExpressionException, MalformedURLException {
-      /* Page List URL */
-      XPathExpression expr = xpath.compile(schema.getL2_schema_for_nextpage_url());
-      String page_list = (String) expr.evaluate(doc, XPathConstants.STRING);
-      LOG.info("page_list schema: " + schema.getL2_schema_for_nextpage_url() + " Got url: " + page_list);
-
-      URL target;
+  private static String guess_URL(String to, String from, String config ) {
+      URL target = null;
       try {
-          target = new URL(page_list);
+          target = new URL(to);
       } catch (MalformedURLException e) {
-          URL orig;
+          URL orig = null;
           try {
-              orig = new URL(url);
-          } catch (MalformedURLException e2) {
-              orig = new URL(schema.getL1_url());
+              orig = new URL(from);
+          } catch (MalformedURLException e1) {
+              try {
+                  orig = new URL(config);
+              } catch (MalformedURLException e2) {
+              }
           }
-          target = new URL(orig, page_list);
+          if ( orig != null ) {
+              try {
+                  target = new URL(orig, to);
+              } catch (MalformedURLException e3) { }
+          }
       }
-      String page_list_url = target.toString();
+      if ( target != null )
+          return target.toString();
+      else
+          return null;
+  }
+
+  private Parse getParse_entry_html(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
+      throws XPathExpressionException {
+      XPathExpression expr;
+      /* Next Page URL */
+      String nextpage_url = schema.getL2_prefix_for_nextpage_url();
+      if ( nextpage_url.isEmpty() ) {
+          expr = xpath.compile(schema.getL2_schema_for_nextpage_url());
+          nextpage_url = (String) expr.evaluate(doc, XPathConstants.STRING);
+          LOG.debug(url + " (Normal case) Got nextpage url: " + nextpage_url);
+      } else {
+          LOG.debug(url + " (Abnormal case?) use l2_prefix_for_nextpage_url instead of l2_schema_for_nextpage_url");
+      }
+      nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
 
       /* Last Page Number */
-      expr = xpath.compile(schema.getL2_last_page());
-      String page_last = (String) expr.evaluate(doc, XPathConstants.STRING);
-      LOG.info("page_list Got last page: " + page_last);
+      String last_page = schema.getL2_last_page();
+      expr = xpath.compile(last_page);
+      last_page = (String) expr.evaluate(doc, XPathConstants.STRING);
+      LOG.debug(url + " Got last page: " + last_page);
       int last = 0;
       try {
-          last = Integer.parseInt(page_last);
+          last = Integer.parseInt(last_page);
       } catch (NumberFormatException e) {
-          LOG.error("failed to parse page increment or page last");
+          LOG.error(url + " failed to parse last page");
           return null;
       }
 
+      return generate_next_pages(url, schema, nextpage_url, last);
+  }
+  private Parse generate_next_pages(String key, CompanySchema schema, String page_list_url, int last) {
       /* Page number Pattern */
       String patternValue = schema.getL2_nextpage_pattern();
       patternValue = "(" + patternValue + "=)(\\d*)";
@@ -367,7 +429,7 @@ public class CompanyParser implements Parser {
       try {
           pattern = Pattern.compile(patternValue);
       } catch (PatternSyntaxException e) {
-          LOG.warn("Failed to compile pattern: " + patternValue + " : " + e);
+          LOG.error(key + " Failed to compile nextpage pattern: " + patternValue + " : " + e);
           return null;
       }
 
@@ -376,7 +438,7 @@ public class CompanyParser implements Parser {
       try {
           incr = Integer.parseInt(schema.getL2_nextpage_increment());
       } catch (NumberFormatException e) {
-          LOG.error("failed to parse page increment or page last");
+          LOG.error(key + " failed to parse nextpage increment");
           return null;
       }
 
@@ -384,74 +446,112 @@ public class CompanyParser implements Parser {
       status.setMajorCode((int) ParseStatusCodes.SUCCESS);
       Parse parse = new Parse("page list", "page list", new Outlink[0], status);
 
-      Matcher matcher = pattern.matcher(page_list_url);
-      if ( matcher.find() ) {
-          int start = Integer.parseInt(matcher.group(2));
-          String prefix = matcher.group(1);
-          for (int i = start; i <= last; i += incr ) {
-              String subsitute = prefix + Integer.toString(i);
-              String newurl = matcher.replaceAll(subsitute);
+      if ( schema.getL2_prefix_for_nextpage_url().isEmpty() )  {
+          /* normal case where next page is a href, can generate list of new urls basing on pattern */
+          Matcher matcher = pattern.matcher(page_list_url);
+          if ( matcher.find() ) {
+              int start = Integer.parseInt(matcher.group(2));
+              String prefix = matcher.group(1);
+              for (int i = start; i <= last; i += incr ) {
+                  String subsitute = prefix + Integer.toString(i);
+                  String newurl = matcher.replaceAll(subsitute);
 
-              WebPage  newPage = WebPage.newBuilder().build();
-              newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-              CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
-              CompanyUtils.setListLink(newPage);
-              newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+                  WebPage  newPage = WebPage.newBuilder().build();
+                  newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                  CompanyUtils.setCompanyName(newPage, schema.getName());
+                  CompanyUtils.setListLink(newPage);
+                  newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
-              parse.addPage(newurl, newPage);
-              if ( runtime_debug ) break;
+                  /* dont need to add post data here, we won't handle it,
+                   * if there is any strange site do this way, will add it
+                   **/
+                  parse.addPage(newurl, newPage);
+                  if ( runtime_debug ) break;
+              }
+          } else {
+              LOG.error(key + " failed to find nextpage pattern");
           }
       } else {
-          LOG.error("failed to find page list pattern");
-      }
+          /* normally this should be using method POST with some dynamic data, we should do pattern match/replace inside dynamic data */
+          String l2_postdata = schema.getL2_nextpage_postdata();
+          if ( l2_postdata.isEmpty() ) {
+              LOG.warn(key + " Dont know how to generate new pages without dynamic post data in schema");
+              return parse;
+          }
+          Matcher matcher = pattern.matcher(l2_postdata);
+          if ( matcher.find() ) {
+              int start = Integer.parseInt(matcher.group(2));
+              String prefix = matcher.group(1);
+              for (int i = start; i <= last; i += incr ) {
+                  String subsitute = prefix + Integer.toString(i);
+                  String newpostdata = matcher.replaceAll(subsitute);
+                  /* hbase use url as the key, but we will generate series of webpage with same key value,
+                   * adding a trailing stuff, and remember to remove it in fetcher/protolcol-http4,
+                   * This suffix should survive url normalizer and url filter.
+                   * Should not be a problem for indexing, becausee l2 page won't be indexed.
+                   * Any problem for other Job?
+                   **/
+                  String newurl = page_list_url + "::" + Integer.toString(i);
 
+                  WebPage newPage = WebPage.newBuilder().build();
+                  newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                  CompanyUtils.setCompanyName(newPage, schema.getName());
+                  CompanyUtils.setListLink(newPage);
+                  newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+                  newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
+
+                  parse.addPage(newurl, newPage);
+                  if ( runtime_debug ) break;
+              }
+          } else {
+              LOG.error(key + " failed to find nextpage pattern from postdata");
+          }
+      }
       return parse;
   }
-  private Parse getParse_list(Parse parse, String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
-      throws XPathExpressionException, MalformedURLException {
-      XPathExpression expr = xpath.compile(schema.getL2_schema_for_jobs());
-      NodeList rows = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
 
-      if ( rows == null  || rows.getLength() == 0 ) {
-          LOG.info(" no jobs in url : " + url);
+  private Parse getParse_list_html(Parse parse, String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
+      throws XPathExpressionException {
+      XPathExpression expr = xpath.compile(schema.getL2_schema_for_jobs());
+      NodeList jobs = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+
+      if ( jobs == null  || jobs.getLength() == 0 ) {
+          LOG.info(url + " no jobs found ");
       } else {
-          LOG.info("Found " + rows.getLength() + "jobs");
+          LOG.info(url + " Found " + jobs.getLength() + " jobs");
           if ( parse == null ) {
               ParseStatus status = ParseStatus.newBuilder().build();
               status.setMajorCode((int) ParseStatusCodes.SUCCESS);
               parse = new Parse("job list", "job list", new Outlink[0], status);
           }
-          for ( int i = 0; i < rows.getLength(); i++ ) {
-              Element row = (Element)rows.item(i);
-              expr = xpath.compile(schema.getL2_schema_for_joburl());
-              String link = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
-              LOG.info("link:" + link);
+          for ( int i = 0; i < jobs.getLength(); i++ ) {
+              Element job = (Element)jobs.item(i);
 
-              URL target;
-              try {
-                  target = new URL(link);
-              } catch (MalformedURLException e) {
-                  URL orig;
-                  try {
-                      orig = new URL(url);
-                  } catch (MalformedURLException e2) {
-                      orig = new URL(schema.getL1_url());
-                  }
-                  target = new URL(orig, link);
+              String l2_prefix_for_joburl = schema.getL2_prefix_for_joburl();
+              if ( !l2_prefix_for_joburl.isEmpty() ) {
+                  LOG.debug(url + " (Abnormal case? ) joburl prefix: " + l2_prefix_for_joburl);
               }
 
+              expr = xpath.compile(schema.getL2_schema_for_joburl());
+              String link = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
+              link = l2_prefix_for_joburl + link;
+              LOG.debug(url + " contain link: " + link);
+
+              String target = guess_URL(link, url, schema.getL1_url());
+
               expr = xpath.compile(schema.getL2_job_title());
-              String title = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
+              String title = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
               title.replaceAll("\\s+", " ");
               /* here need to strip off the invalid char for ibm site */
               title = SolrUtils.stripNonCharCodepoints(title);
 
               expr = xpath.compile(schema.getL2_job_location());
-              String location = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
+              String location = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
               location = SolrUtils.stripNonCharCodepoints(location);
 
               expr = xpath.compile(schema.getL2_job_date());
-              String date = (String)((String) expr.evaluate(row, XPathConstants.STRING)).trim();
+              String date = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
               //date = SolrUtils.stripNonCharCodepoints(date);
               try {
                   /* we need use facet.fields on job post date, which need specific date format
@@ -478,15 +578,15 @@ public class CompanyParser implements Parser {
 
               newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
-              parse.addPage(target.toString(), newPage);
+              parse.addPage(target, newPage);
 
               if ( runtime_debug ) break;
           }
       }
       return parse;
   }
-  private Parse getParse_summary(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
-      throws XPathExpressionException, MalformedURLException {
+  private Parse getParse_summary_html(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
+      throws XPathExpressionException, MalformedURLException, PathNotFoundException {
       XPathExpression expr = xpath.compile(schema.getL3_job_title());
       String title = (String) expr.evaluate(doc, XPathConstants.STRING);
       title.replaceAll("\\s+", " ");
@@ -501,7 +601,7 @@ public class CompanyParser implements Parser {
       }
       text = SolrUtils.stripNonCharCodepoints(text);
 
-      LOG.info("Title: " + title + " Description: " + text);
+      LOG.info(url + " Title: " + title + " Description: " + text);
       /* something to be done here,
        * we can select don't configure abstract & description in schema file,
        * then fallback to the default html parser implementation, html doc title and full page text.
@@ -512,12 +612,189 @@ public class CompanyParser implements Parser {
       return parse;
   }
 
+  private Parse getParse_entry_json(String url, WebPage page, CompanySchema schema, DocumentContext doc)
+      throws PathNotFoundException {
+      /* Next Page URL */
+      String nextpage_url = schema.getL2_prefix_for_nextpage_url();
+      if ( nextpage_url.isEmpty() ) {
+          nextpage_url = doc.read(schema.getL2_schema_for_nextpage_url());
+          LOG.debug(url + " Got nextpage url: " + nextpage_url);
+      } else {
+         LOG.debug(url + " (Normal Case) use l2_prefix_for_nextpage_url instead of l2_schema_for_nextpage_url");
+      }
+      nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
+
+      /* Additional flag from alibaba, we don't use it.
+      boolean result = doc.read("$.isSuccess");
+      if ( result ) {
+          LOG.warn("successful result");
+      } else {
+          LOG.warn("not successful result");
+      } */
+
+      /* Last Page Number */
+      String last_page = schema.getL2_last_page();
+      last_page = doc.read(last_page, String.class);
+      LOG.debug(url + " Got last page: " + last_page);
+      int last = 0;
+      try {
+          last = Integer.parseInt(last_page);
+      } catch (NumberFormatException e) {
+          LOG.error(url + " failed to parse last page");
+          return null;
+      }
+
+      return generate_next_pages(url, schema, nextpage_url, last);
+  }
+
+  private Parse getParse_list_json(Parse parse, String url, WebPage page, CompanySchema schema, DocumentContext doc)
+      throws PathNotFoundException {
+      List<Object> jobs = doc.read(schema.getL2_schema_for_jobs());
+      if ( jobs == null  || jobs.size() == 0 ) {
+          LOG.info(url + " no jobs found");
+          return parse;
+      }
+
+      LOG.info(url + " Found " + jobs.size() + " jobs");
+      if ( parse == null ) {
+          ParseStatus status = ParseStatus.newBuilder().build();
+          status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+          parse = new Parse("job list", "job list", new Outlink[0], status);
+      }
+          /* Dont use this right now, throw out exception upper
+          Configuration configuration = Configuration.builder().options(Option.SUPPRESS_EXCEPTIONS).build();
+          JsonPath.parse(SIMPLE_MAP, configuration).read("$.not-found");
+          */
+      String l2_prefix_for_joburl = schema.getL2_prefix_for_joburl();
+      if ( !l2_prefix_for_joburl.isEmpty() ) {
+          LOG.debug(url + " joburl prefix: " + l2_prefix_for_joburl);
+      }
+
+      for ( int i = 0; i < jobs.size(); i++ ) {
+              /*
+               * Dont use this old way, it will always try to case to some type, which we not know in code
+               * Object job = jobs.get(i);
+               *
+               * String link = JsonPath.read(job, schema.getL2_schema_for_joburl());
+               */
+          String pattern_prefix = schema.getL2_schema_for_jobs() + "[" + Integer.toString(i) + "]";
+
+          String pattern_url = pattern_prefix + "." + schema.getL2_schema_for_joburl();
+          String pattern_title = pattern_prefix + "." + schema.getL2_job_title();
+          String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
+          String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
+
+
+          String newurl = doc.read(pattern_url, String.class);
+          String title = doc.read(pattern_title, String.class);
+          String location = doc.read(pattern_location, String.class);
+          String date = doc.read(pattern_date, String.class);
+
+
+
+          String link = l2_prefix_for_joburl + newurl;
+          LOG.debug(url + " contain link: " + link);
+
+          String target = guess_URL(link, url, schema.getL1_url());
+
+          title.replaceAll("\\s+", " ");
+              /* here need to strip off the invalid char for ibm site */
+          title = SolrUtils.stripNonCharCodepoints(title);
+
+          location = SolrUtils.stripNonCharCodepoints(location);
+
+          try {
+                  /* we need use facet.fields on job post date, which need specific date format
+                   * And different company might use different format, need to unify them.
+                   * Fortunately there is already common function in DateUtil, hope can cope with all.
+                   * If not, we might extend the schema to add our own format.
+                   */
+              Date d = DateUtil.parseDate(date);
+              date = DateUtil.getThreadLocalDateFormat().format(d);
+          } catch (java.text.ParseException pe) {
+                   /* Stupid, Alibaba use GMT ms after 1970.01.01 */
+              try {
+                  long ms = Long.parseLong(date);
+                  Date d = new Date(ms);
+                  date = DateUtil.getThreadLocalDateFormat().format(d);
+              } catch ( java.lang.NumberFormatException npe ) {
+                  LOG.warn(schema.getName() + " invalid date format(need extend our schema): " + date);
+                  date = DateUtil.getThreadLocalDateFormat().format(new Date());
+              }
+          }
+
+          WebPage  newPage = WebPage.newBuilder().build();
+          newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+          CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
+          CompanyUtils.setSummaryLink(newPage);
+
+          newPage.getMetadata().put(CompanyUtils.company_job_title, ByteBuffer.wrap(title.getBytes()));
+          newPage.getMetadata().put(CompanyUtils.company_job_location, ByteBuffer.wrap(location.getBytes()));
+          newPage.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(date.getBytes()));
+
+          newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+          if ( try_to_shortcut_l3page ) {
+                  /* Wait a moment, alibaba's JSON file contains the job detail already,
+                  * which means We don't need fetch the 3rd level page which is generated via that.
+                  * of course, it is better to have an option to enable/disable this feature.
+                  */
+              String pattern_l2_description = schema.getL2_job_description();
+              if ( !pattern_l2_description.isEmpty()) {
+                  pattern_l2_description = pattern_prefix + pattern_l2_description;
+
+                  Map<String, String> descs = doc.read(pattern_l2_description, Map.class);
+                  String l2_description = "";
+                  for ( String value : descs.values() ) {
+                      l2_description += value;
+                      l2_description += "<BR/>";
+                  }
+
+                  newPage.setText(new Utf8(l2_description));
+                  newPage.setTitle(new Utf8(title));
+                  newPage.setContent(ByteBuffer.wrap(new byte[0]));
+
+                  //final byte[] signature = sig.calculate(newPage);
+                  final byte[] signature = org.apache.hadoop.io.MD5Hash.digest(l2_description.getBytes(), 0, l2_description.length()).getDigest();
+                  newPage.setSignature(ByteBuffer.wrap(signature));
+
+                  ParseStatus status = ParseStatus.newBuilder().build();
+                  status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+                  newPage.setParseStatus(status);
+
+                      /* using parents Mark */
+                  Utf8 fetchMark = Mark.FETCH_MARK.checkMark(page);
+                  if (fetchMark != null) {
+                      Mark.GENERATE_MARK.putMark(newPage, fetchMark);
+                      Mark.FETCH_MARK.putMark(newPage, fetchMark);
+                      Mark.PARSE_MARK.putMark(newPage, fetchMark);
+                      Mark.UPDATEDB_MARK.putMark(newPage, fetchMark);
+                  }
+
+                      /* should do some tricy here for schedule to make sure it will be scheduled later than parent?
+                       * schedule.initializeSchedule(newurl, newPage);
+                       * workaround, 999 mean this page is newly fetched,
+                       * should be fetched again after configured INTERVAL
+                       */
+                  newPage.setPrevFetchTime(System.currentTimeMillis());
+              }
+          }
+          parse.addPage(target, newPage);
+
+          if ( runtime_debug ) break;
+      }
+
+      return parse;
+  }
+
   public void setConf(Configuration conf) {
     this.conf = conf;
     this.defaultCharEncoding = getConf().get(
         "parser.character.encoding.default", "windows-1252");
     this.repo = CompanySchemaRepository.getInstance(conf.get("company.schema.dir", "./"));
     this.runtime_debug = conf.getBoolean("runtime.debug", false);
+    this.sig = SignatureFactory.getSignature(conf);
+    this.try_to_shortcut_l3page = conf.getBoolean("try.to.shortcut.l3page", true);
   }
 
   public Configuration getConf() {

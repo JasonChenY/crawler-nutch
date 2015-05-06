@@ -127,20 +127,24 @@ public class HttpResponse implements Response {
               Http.LOG.debug("post data: " + schema.getL1_postdata());
           }
           Http.LOG.info("using POST for url:" + url.toString());
-       } /* else if ( CompanyUtils.isListLink(page) && schema.pagelist_method().equalsIgnoreCase("POST") ) {
-           page list should not have any preconfigured POST data, but possible dynamic data
+       }  else if ( CompanyUtils.isListLink(page) && schema.getL2_nextpage_method().equalsIgnoreCase("POST") ) {
+           /* level 1 page list should not have any preconfigured POST data, but possible dynamic data
            * Alibaba case, use POST for page list, this will be finished later,
            * and we may get the method dynamiclly for some website
            * but not all website, e.g Alibaba, then we need preconfigure this.
-           *
-          request = new HttpPost(url.toString());
+           */
+          String urlstring = url.toString();
+          int indexSuffix = urlstring.indexOf("::");
+          if (indexSuffix != -1) {
+             urlstring = urlstring.substring(0, indexSuffix);
+          }
+          request = new HttpPost(urlstring);
           if (page.getMetadata().containsKey(CompanyUtils.company_dyn_data)) {
               String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
               ((HttpPost) request).setEntity(new StringEntity(data));
               request.addHeader("Content-Type", "application/x-www-form-urlencoded");
           }
-
-       } */ else {
+       } else {
           request = new HttpGet(url.toString());
        }
     } else {
@@ -149,9 +153,9 @@ public class HttpResponse implements Response {
     }
 
     request.addHeader("User-Agent", http.getUserAgent());
-    request.addHeader("Accept-Language", "en-us,en-gb,en;q=0.7,*;q=0.3");
+    request.addHeader("Accept-Language", "zh-CN,en-us,en-gb,en;q=0.7,*;q=0.3");
     request.addHeader("Accept-Charset", "utf-8,ISO-8859-1;q=0.7,*;q=0.7");
-    request.addHeader("Accept", "text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
+    request.addHeader("Accept", "application/json,text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
     request.addHeader("Accept-Encoding", "x-gzip, gzip, deflate");
     if (page.getModifiedTime() > 0) {
        request.addHeader("If-Modified-Since", HttpDateFormat.toString(page.getModifiedTime()));

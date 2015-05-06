@@ -1,0 +1,25 @@
+{ 
+    "company" : "Alibaba",
+    "l1_url" : "http://job.alibaba.com/zhaopin/socialPositionList/doList.json",
+    "l1_method" : "POST",
+    "l1_postdata" : "pageSize=10&pageIndex=1"
+    "page_list" : {
+	  "l2_prefix_for_nextpage_url" : "http://job.alibaba.com/zhaopin/socialPositionList/doList.json",
+          "l2_schema_for_nextpage_url" :"",
+          "l2_nextpage_method" : "POST",
+	  "l2_nextpage_postdata" : "pageSize=10&pageIndex=1"
+          "l2_nextpage_pattern" : "pageIndex",
+          "l2_nextpage_increment" : "1",
+          "l2_last_page" : "$.returnValue.totalPage",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "$.returnValue.datas",
+          "l2_prefix_for_joburl" : "http://job.alibaba.com/zhaopin/position_detail.htm?positionId=",
+	  "l2_schema_for_joburl" : "id",
+          "l2_job_title" : "name",
+          "l2_job_location" : "workLocation",
+          "l2_job_date" : "effectiveDate",
+   	  "l2_job_description" : "['workExperience', 'requirement', 'description']",
+    },
+}
+

@@ -139,8 +139,7 @@ public class ParseUtil extends Configured {
       }
     }
 
-    LOG.warn("Unable to successfully parse content " + url + " of type "
-        + contentType);
+    LOG.warn(url + " Fail to be parsed, type: " + contentType);
     return ParseStatusUtils.getEmptyParse(new ParseException(
         "Unable to successfully parse content"), null);
   }
