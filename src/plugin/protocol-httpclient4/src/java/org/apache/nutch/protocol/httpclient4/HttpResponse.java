@@ -257,6 +257,14 @@ public class HttpResponse implements Response {
       }
       */
 
+      /* Faint, cant do this check, fine for normal site,
+         chunked/gzipped response will always return -1
+      if (code == 200 && entity.getContentLength() <= 0 ) {
+         Http.LOG.warn(" response code 200, but no content ");
+         throw new IOException("response code 200, but no content");
+      }
+      */
+
       String contentEncoding = headers.get(Response.CONTENT_ENCODING);
       if (contentEncoding != null && Http.LOG.isTraceEnabled())
           Http.LOG.info("; Content-Encoding: " + contentEncoding);
@@ -267,11 +275,6 @@ public class HttpResponse implements Response {
       }
 
       content = EntityUtils.toByteArray(entity);
-
-      if (code == 200 && entity.getContentLength() <= 0 ) {
-          Http.LOG.warn(" response code 200, but no content ");
-          throw new IOException("response code 200, but no content");
-      }
 
         // add headers in metadata to row
       if (page.getHeaders() != null) {

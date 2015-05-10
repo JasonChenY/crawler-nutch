@@ -32,18 +32,24 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 public class CompanySchemaRepository {
 
   private boolean auto;
 
-  private HashMap<String, CompanySchema> companies;
+  private HashMap<String, CompanySchema> companies = new HashMap<String, CompanySchema>();;
 
   public static final Logger LOG = LoggerFactory.getLogger(CompanySchemaRepository.class);
 
-  private JSONParser parser;
+  private JSONParser parser = new JSONParser();;
 
   private String schemaDir;
+  /* Note the repository and HashMap itself is not multithread safe,
+   * but don't care about it, we won't remove any entries
+   * the lock condition is just added on schema file
+   */
+  private final Lock lock = new ReentrantLock();
 
   private static CompanySchemaRepository _instance;
   public static CompanySchemaRepository getInstance(String dir) throws RuntimeException {
@@ -53,21 +59,34 @@ public class CompanySchemaRepository {
       return _instance;
   }
   private CompanySchemaRepository(String dir) throws RuntimeException {
-    companies = new HashMap<String, CompanySchema>();
     //this.auto = conf.getBoolean("company.schema.auto-load", false);
     schemaDir = dir;
-    parser = new JSONParser();
   }
 
   public CompanySchema getCompanySchema(String name) {
+    /* remove this? shortcum is that other thread will wait for A schema
+     * while another thread is parsing  B schema
+     * Doesn't matter acutally because we won't have millions schema to be parsed, usually will be quick.
+     */
     if (companies.containsKey(name))
         return companies.get(name);
 
-    CompanySchema companySchema = parseCompanySchema(name);
-    if ( companySchema != null ) {
-        companies.put(name, companySchema);
+    try {
+        lock.lock();
+
+        /* check again whether other guy already parsed it for me */
+        if (companies.containsKey(name))
+            return companies.get(name);
+
+        CompanySchema companySchema = parseCompanySchema(name);
+        if (companySchema != null) {
+            companies.put(name, companySchema);
+        }
+
+        return companySchema;
+    } finally {
+        lock.unlock();
     }
-    return companySchema;
   }
 
   private CompanySchema parseCompanySchema(String name) {
