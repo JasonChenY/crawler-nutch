@@ -42,6 +42,14 @@
         <plugin id="parse-company" />
     </mimeType>
 
+    <mimeType name="text/aspdotnet">
+        <plugin id="parse-company" />
+    </mimeType>
+
+    <mimeType name="text/plain">
+        <plugin id="parse-company" />
+    </mimeType>
+
 	<mimeType name="application/rss+xml">
 	    <plugin id="parse-tika" />
 	    <plugin id="feed" />

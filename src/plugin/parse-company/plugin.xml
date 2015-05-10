@@ -39,7 +39,7 @@
 
       <implementation id="org.apache.nutch.parse.company.CompanyParser"
                       class="org.apache.nutch.parse.company.CompanyParser">
-        <parameter name="contentType" value="text/html|application/xhtml+xml"/>
+        <parameter name="contentType" value="text/html|application/xhtml+xml|text/aspdotnet|application/json"/>
         <parameter name="pathSuffix" value=""/>
       </implementation>
 

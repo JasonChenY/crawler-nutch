@@ -103,6 +103,24 @@ import com.jayway.jsonpath.JsonPath;
 import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.PathNotFoundException;
 
+/* perl5 pattern */
+import org.apache.oro.text.regex.MatchResult;
+//import org.apache.oro.text.regex.Pattern;
+import org.apache.oro.text.regex.PatternCompiler;
+import org.apache.oro.text.regex.PatternMatcher;
+import org.apache.oro.text.regex.PatternMatcherInput;
+import org.apache.oro.text.regex.Perl5Compiler;
+import org.apache.oro.text.regex.Perl5Matcher;
+
+/* stuff for replacing postdata */
+import org.apache.http.NameValuePair;
+import org.apache.http.message.BasicNameValuePair;
+import java.util.ArrayList;
+
+/* for write debug POST data to file */
+import java.io.FileWriter;
+import java.io.BufferedWriter;
+
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
       .getLogger("org.apache.nutch.parse.company");
@@ -130,6 +148,7 @@ public class CompanyParser implements Parser {
   private Signature sig;
 
   private boolean try_to_shortcut_l3page;
+  private int defaultInterval;
 
   private static Collection<WebPage.Field> FIELDS = new HashSet<WebPage.Field>();
 
@@ -250,6 +269,7 @@ public class CompanyParser implements Parser {
     try {
       base = new URL(baseUrl);
     } catch (MalformedURLException e) {
+      LOG.warn(url + " Failed to parse baseUrl");
       return ParseStatusUtils.getEmptyParse(e, getConf());
     }
 
@@ -271,8 +291,9 @@ public class CompanyParser implements Parser {
 
       input.setEncoding(encoding);
       if (LOG.isTraceEnabled()) {
-        LOG.trace("Parsing...");
+        LOG.trace("Parsing..." + encoding);
       }
+        LOG.warn("Parsing..." + encoding);
 
       String content_type = "html";
       Utf8 content_type_key = new Utf8(org.apache.nutch.net.protocols.Response.CONTENT_TYPE);
@@ -287,7 +308,8 @@ public class CompanyParser implements Parser {
        * but becasue of different data type, it make the code even unreadable,
        * Unforturnately we wont have more cases till now
        */
-      if ( content_type.toLowerCase().contains("html") ) {
+      if ( content_type.toLowerCase().contains("html") ||
+              content_type.toLowerCase().contains("text/plain")   ) {
         /* parsing with NEKO DOM parser */
         DOMParser parser = new DOMParser();
         try {
@@ -406,20 +428,168 @@ public class CompanyParser implements Parser {
       }
       nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
 
-      /* Last Page Number */
+      /* Last Page Number,
+       * Note not all company will have the last page number to iterate,
+       * e.g Microsoft, if so, we fallback to 'click' on the 'Next' button
+       * */
       String last_page = schema.getL2_last_page();
-      expr = xpath.compile(last_page);
-      last_page = (String) expr.evaluate(doc, XPathConstants.STRING);
-      LOG.debug(url + " Got last page: " + last_page);
-      int last = 0;
-      try {
-          last = Integer.parseInt(last_page);
-      } catch (NumberFormatException e) {
-          LOG.error(url + " failed to parse last page");
-          return null;
-      }
+      if ( !last_page.isEmpty() ) {
+          expr = xpath.compile(last_page);
+          last_page = (String) expr.evaluate(doc, XPathConstants.STRING);
+          LOG.debug(url + " Got last page: " + last_page);
+          int last = 0;
+          try {
+              last = Integer.parseInt(last_page);
+          } catch (NumberFormatException e) {
+              LOG.error(url + " failed to parse last page");
+              return null;
+          }
 
-      return generate_next_pages(url, schema, nextpage_url, last);
+          return generate_next_pages(url, schema, nextpage_url, last);
+      } else {
+          /* fallback to 'click' 'Next' button
+           * Following two meta data should appear to decide when to finish the iterate.
+           * l2_nextpage_postdata_inherit_regex
+           * l2_nextpage_endflag
+           */
+          return generate_next_page(url, page, nextpage_url, schema , doc, xpath);
+      }
+  }
+  private Parse generate_next_page(String url, WebPage page, String nextpage_url, CompanySchema schema, Document doc, XPath xpath)
+          throws XPathExpressionException{
+      String regex = schema.getL2_nextpage_postdata_inherit_regex();
+      String nextpage_endflag = schema.getL2_nextpage_endflag();
+      XPathExpression expr = xpath.compile(nextpage_endflag);
+      NodeList rows = (NodeList) expr.evaluate(doc, XPathConstants.NODESET);
+      if ( rows == null || rows.getLength() == 0 ) {
+          LOG.info(url + " reach last Page");
+          return null;
+      } else {
+          LOG.debug(url + " generate_next_page's POST data");
+          String origcontent = new String(page.getContent().array());
+          /* For Microsoft, we should take care at least two params: __VIEWSTATE, __EVENTVALIDATION */
+          List<NameValuePair> substitue_params = new ArrayList<NameValuePair>();
+          try {
+              final PatternCompiler cp = new Perl5Compiler();
+              final org.apache.oro.text.regex.Pattern pattern = cp.compile(regex, Perl5Compiler.CASE_INSENSITIVE_MASK | Perl5Compiler.READ_ONLY_MASK | Perl5Compiler.MULTILINE_MASK);
+              final PatternMatcher matcher = new Perl5Matcher();
+
+              final PatternMatcherInput input = new PatternMatcherInput(origcontent);
+
+              MatchResult result;
+
+              // loop the matches
+              while (matcher.contains(input, pattern)) {
+                  result = matcher.getMatch();
+                  String key = result.group(1);
+                  String value = result.group(2);
+                  LOG.debug("Matcher found: " + key + " --> ");
+                  substitue_params.add(new BasicNameValuePair(key, value));
+              }
+          } catch (Exception ex) {
+              LOG.warn(url + " failed to get matcher" + ex.getMessage());
+          }
+
+          LOG.debug(url + " get " + substitue_params.size() + " matcher via regex " + regex);
+
+                    /* JDK pattern/match not powerful enough
+                    Pattern pattern = null;
+                    try {
+                        pattern = Pattern.compile(regex);
+                        //pattern = Pattern.compile("\\d+\\|hiddenField\\|(__EVENTVALIDATION)\\|(.*)\\|\\d+\\|.*");
+                    } catch (PatternSyntaxException e) {
+                        System.out.println("Failed to compile nextpage postdata pattern: " + regex + " : " + e);
+                        return ;
+                    }
+
+                    Matcher matcher = pattern.matcher(origcontent);
+                    if ( matcher.find() ) {
+                        key = matcher.group(1);
+                        value = matcher.group(2);
+
+                        System.out.println("Matcher found: " + key + " " + value);
+                    }
+                    */
+          String newpostdata = schema.getL2_nextpage_postdata();
+
+          for ( int i=0; i < substitue_params.size(); i++ ) {
+              String key = substitue_params.get(i).getName();
+              String value = substitue_params.get(i).getValue();
+              StringBuffer result = new StringBuffer();
+              try {
+                  Pattern pattern_for_postdata = Pattern.compile(key + "=([^&]*)");
+                  Matcher matcher_for_postdata = pattern_for_postdata.matcher(newpostdata);
+
+                  if (matcher_for_postdata.find()) {
+                                /* new method to replace */
+                                /* encode value firstly, for our case, "==" should be encoded */
+                      try {
+                          value = java.net.URLEncoder.encode(value, "UTF-8");
+                      } catch (java.io.UnsupportedEncodingException ee) {};
+                      matcher_for_postdata.appendReplacement(result,  key + "=" + value);
+                      matcher_for_postdata.appendTail(result);
+                  }
+              } catch (PatternSyntaxException e) {
+                  LOG.warn(url + " Failed to compile nextpage postdata pattern: " + regex + " : " + e);
+              }
+              newpostdata = result.toString();
+          }
+
+          if ( runtime_debug ) {
+              try {
+                  String date = DateUtil.getThreadLocalDateFormat().format(new Date());
+                  LOG.debug(url + " write generated post data to file /tmp/" + date);
+                  FileWriter fw = new FileWriter("/tmp/" + date + ".data", true);
+                  BufferedWriter bw = new BufferedWriter(fw);
+                  bw.write(newpostdata);
+                  bw.flush();
+                  bw.close();
+                  fw.close();
+
+                  fw = new FileWriter("/tmp/" + date + ".html", true);
+                  bw = new BufferedWriter(fw);
+                  bw.write(origcontent);
+                  bw.flush();
+                  bw.close();
+                  fw.close();
+              } catch (Exception ee) {
+                  LOG.warn(url + " failed to generate post file " + ee.getMessage());
+              };
+          }
+
+          ParseStatus status = ParseStatus.newBuilder().build();
+          status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+          Parse parse = new Parse("next page", "next page", new Outlink[0], status);
+
+          /* Now have data to generate next WebPage
+           * Note, this will be deemed as ENTRY page as well,
+           * and it will overwrite the original ENTRY page,
+           * So now should first check the dynamic/post data in webpage it self,
+           * then check the schema configuration for ENTRY page,
+           * a little bit thing to be taken cared in httpclient4 plugin.
+           * */
+          WebPage newPage = WebPage.newBuilder().build();
+          newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+          CompanyUtils.setCompanyName(newPage, schema.getName());
+          CompanyUtils.setEntryLink(newPage);
+          newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+          newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
+
+          /* should change the new page url a bit, otherwise, ParseJob firstly save newPage to db
+           * then again update something on the current page and write back to db
+           * we wont go ahead, now the logic:
+           * initial page :  xxxx
+           * 2nd page     :  xxxx::
+           * third page   :  xxxx
+           * 4th page     :  xxxx::
+           */
+          if ( url.indexOf("::") == -1 ) {
+              nextpage_url += "::";
+          }
+          parse.addPage(nextpage_url, newPage);
+          return parse;
+      }
   }
   private Parse generate_next_pages(String key, CompanySchema schema, String page_list_url, int last) {
       /* Page number Pattern */
@@ -551,7 +721,10 @@ public class CompanyParser implements Parser {
               location = SolrUtils.stripNonCharCodepoints(location);
 
               expr = xpath.compile(schema.getL2_job_date());
-              String date = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
+              String date = (String) expr.evaluate(job, XPathConstants.STRING);
+              date = date.trim();
+              date = CompanyUtils.convert_month(date);
+
               //date = SolrUtils.stripNonCharCodepoints(date);
               try {
                   /* we need use facet.fields on job post date, which need specific date format
@@ -562,7 +735,7 @@ public class CompanyParser implements Parser {
                   Date d = DateUtil.parseDate(date);
                   date = DateUtil.getThreadLocalDateFormat().format(d);
               } catch (java.text.ParseException pe) {
-                  LOG.warn(schema.getName() + " invalid date format(need extend our schema): " + date);
+                  LOG.warn(schema.getName() + " invalid date format(need extend our schema): " + pe.getMessage());
                   /* let it continue with current system time */
                   date = DateUtil.getThreadLocalDateFormat().format(new Date());
               }
@@ -578,6 +751,16 @@ public class CompanyParser implements Parser {
 
               newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
+              /*if ( !schema.getL2_nextpage_postdata_inherit_regex().isEmpty() ) {
+               Microsoft: Seems fetching summary page will distrub further 'NEXT' page,
+               * might because server will checking VIEWSTATE/EVENTVALIDATION,
+               * deply the summary page 10 minutes later,
+               * this is decided basing whether need do some manual regex on post data.
+               * if there are other sites, which using regex on post data, but dont need delay,
+               * will introduce another configuration option in schema
+               * Latest experiment show this doesn't matter
+                  newPage.setPrevFetchTime(System.currentTimeMillis() + 10 * 60 * 1000L - defaultInterval * 1000L);
+              }*/
               parse.addPage(target, newPage);
 
               if ( runtime_debug ) break;
@@ -795,6 +978,7 @@ public class CompanyParser implements Parser {
     this.runtime_debug = conf.getBoolean("runtime.debug", false);
     this.sig = SignatureFactory.getSignature(conf);
     this.try_to_shortcut_l3page = conf.getBoolean("try.to.shortcut.l3page", true);
+    this.defaultInterval = conf.getInt("db.fetch.interval.default", 0);
   }
 
   public Configuration getConf() {

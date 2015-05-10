@@ -18,6 +18,8 @@ package org.apache.nutch.companyschema;
 
 public class CompanySchema {
     private String name;
+    private String cookie;
+
     private String l1_url;
     private String l1_method;
     private String l1_postdata;
@@ -31,12 +33,17 @@ public class CompanySchema {
     private String l2_nextpage_increment;
     private String l2_last_page;
 
+    /* fields for Microsoft kind of site */
+    private String l2_nextpage_postdata_inherit_regex;
+    private String l2_nextpage_endflag;
+
     private String l2_schema_for_jobs;
     private String l2_prefix_for_joburl;
     private String l2_schema_for_joburl;
     private String l2_job_title;
     private String l2_job_location;
     private String l2_job_date;
+    /* field for Alibaba */
     private String l2_job_description;
 
     private String l3_job_title;
@@ -44,6 +51,7 @@ public class CompanySchema {
 
     public CompanySchema(String n) {
 	    setName(n);
+        setCookie("");
         setL1_url("");
         setL1_method("GET");
         setL1_postdata("");
@@ -56,6 +64,9 @@ public class CompanySchema {
         setL2_nextpage_pattern("");
         setL2_nextpage_increment("1");
         setL2_last_page("");
+
+        setL2_nextpage_postdata_inherit_regex("");
+        setL2_nextpage_endflag("");
 
         setL2_schema_for_jobs("");
         setL2_prefix_for_joburl("");
@@ -75,6 +86,12 @@ public class CompanySchema {
 
     public void setName(String name) {
         if (name != null) this.name = name;
+    }
+
+    public String getCookie() { return cookie; }
+
+    public void setCookie(String cookie) {
+        if (cookie != null) this.cookie = cookie;
     }
 
     public String getL1_url() {
@@ -171,6 +188,22 @@ public class CompanySchema {
         if (l2_last_page != null) this.l2_last_page = l2_last_page;
     }
 
+    public String getL2_nextpage_postdata_inherit_regex() {
+        return l2_nextpage_postdata_inherit_regex;
+    }
+
+    public void setL2_nextpage_postdata_inherit_regex(String l2_nextpage_postdata_inherit_regex) {
+        if (l2_nextpage_postdata_inherit_regex != null) this.l2_nextpage_postdata_inherit_regex = l2_nextpage_postdata_inherit_regex;
+    }
+
+    public String getL2_nextpage_endflag() {
+        return l2_nextpage_endflag;
+    }
+
+    public void setL2_nextpage_endflag(String l2_nextpage_endflag) {
+        if (l2_nextpage_endflag != null) this.l2_nextpage_endflag = l2_nextpage_endflag;
+    }
+
     public String getL2_schema_for_jobs() {
         return l2_schema_for_jobs;
     }
@@ -245,6 +278,7 @@ public class CompanySchema {
 
     public void print() {
         System.out.println("name : " + name);
+        System.out.println("cookie : " + cookie);
         System.out.println("l1_url : " + l1_url);
         System.out.println("l1_method : " + l1_method);
         System.out.println("l1_postdata : " + l1_postdata);
@@ -257,6 +291,9 @@ public class CompanySchema {
         System.out.println("l2_nextpage_pattern : " + l2_nextpage_pattern);
         System.out.println("l2_nextpage_increment : " + l2_nextpage_increment);
         System.out.println("l2_last_page : " + l2_last_page);
+        System.out.println("  ");
+        System.out.println("l2_nextpage_postdata_inherit_regex : " + l2_nextpage_postdata_inherit_regex);
+        System.out.println("l2_nextpage_endflag : " + l2_nextpage_endflag);
         System.out.println("  ");
         System.out.println("l2_schema_for_jobs : " + l2_schema_for_jobs);
         System.out.println("l2_prefix_for_joburl : " + l2_prefix_for_joburl);

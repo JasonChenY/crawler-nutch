@@ -28,6 +28,7 @@ import org.apache.gora.filter.MapFieldValueFilter;
 import org.apache.nutch.companyschema.CompanyUtils;
 import org.apache.nutch.companyschema.CompanySchema;
 import org.apache.nutch.crawl.*;
+import org.apache.nutch.protocol.ProtocolStatusCodes;
 import org.apache.nutch.scoring.ScoreDatum;
 import org.apache.nutch.util.*;
 import org.slf4j.Logger;
@@ -129,6 +130,14 @@ public class ParserJob extends NutchTool implements Tool {
       }
 
       if (skipTruncated && isTruncated(unreverseKey, page)) {
+          if ( CompanyUtils.isEntryLink(page) || CompanyUtils.isListLink(page) ) {
+              //if ( page.getProtocolStatus().getCode() == ProtocolStatusCodes.EXCEPTION ) {
+                  LOG.warn(unreverseKey + " ENTRY or LIST page previous fetch failed, refetch soon");
+                  page.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                  schedule.initializeSchedule(unreverseKey, page);
+                  context.write(key, page);
+              //}
+          }
         return;
       }
 
@@ -172,10 +181,19 @@ public class ParserJob extends NutchTool implements Tool {
               if ( newPage.getPrevFetchTime() != 0 ) {
                   /* Just a flag to make sure that this page won't be fetched before his parent
                    * we are aiming for a faked Fetched/Parsed WebPage.
+                   *
+                   * if prevFetchTime is set to NOW, which means nearly don't hope to fetch this page,
+                   *     this is used for the case of Alibaba's summary page, we already have enough info for indexing
+                   *     so the newPage is only used for triggering indexing.
+                   * if prevFetchTime is set to NOW-20min, which means we hopen this page to be fetched 20min later
+                   *     this is used for Microsoft case, seems fetching summary page will disturb the level 2 Next page,
+                   *     maybe server will do some VIEWSTATE/EVENTVALIDATION.
                    */
-                  long cur = System.currentTimeMillis();
+
+                  //long cur = System.currentTimeMillis();
+                  long prevFetchTime = newPage.getPrevFetchTime();
                   schedule.initializeSchedule(newurl, newPage);
-                  schedule.setFetchSchedule(newurl, newPage, 0, 0, cur, cur, 0);
+                  schedule.setFetchSchedule(newurl, newPage, 0, 0, prevFetchTime, prevFetchTime, 0);
               } else {
                   schedule.initializeSchedule(newurl, newPage);
               }

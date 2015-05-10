@@ -90,6 +90,7 @@ public class CompanySchemaRepository {
           }
 
           CompanySchema companySchema = new CompanySchema(name);
+          companySchema.setCookie((String) json.get("cookie"));
           companySchema.setL1_url((String) json.get("l1_url"));
           companySchema.setL1_method((String) json.get("l1_method"));
           companySchema.setL1_postdata((String) json.get("l1_postdata"));
@@ -104,6 +105,9 @@ public class CompanySchemaRepository {
               companySchema.setL2_nextpage_pattern((String) page_list.get("l2_nextpage_pattern"));
               companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
               companySchema.setL2_last_page((String) page_list.get("l2_last_page"));
+
+              companySchema.setL2_nextpage_postdata_inherit_regex((String) page_list.get("l2_nextpage_postdata_inherit_regex"));
+              companySchema.setL2_nextpage_endflag((String) page_list.get("l2_nextpage_endflag"));
           }
 
           JSONObject job_list = (JSONObject)json.get("job_list");

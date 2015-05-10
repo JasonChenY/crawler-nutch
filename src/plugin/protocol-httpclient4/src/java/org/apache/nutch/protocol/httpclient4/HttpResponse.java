@@ -59,6 +59,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import org.apache.nutch.util.Bytes;
+
 /**
  * An HTTP response.
  * 
@@ -101,6 +102,7 @@ public class HttpResponse implements Response {
     schema = repo.getCompanySchema(name);
     if ( schema == null ) {
         Http.LOG.warn(url.toString() + " schema not configured");
+        throw new IOException(url + " schema not found , cant let it continue");
     } else {
         Http.LOG.info("url for company: " + name);
     }
@@ -108,20 +110,23 @@ public class HttpResponse implements Response {
     this.url = url;
     if ( schema != null ) {
        if ( CompanyUtils.isEntryLink(page) && schema.getL1_method().equalsIgnoreCase("POST") ) {
-          request = new HttpPost(url.toString());
-          //List <NameValuePair> nvps = new ArrayList <NameValuePair>();
-          //nvps.add(new BasicNameValuePair("username", "vip"));
-          //nvps.add(new BasicNameValuePair("password", "secret"));
-          //request.setEntity(new UrlEncodedFormEntity(nvps));
+          /* for Microsoft case */
+          String urlstring = url.toString();
+          int indexSuffix = urlstring.indexOf("::");
+          if (indexSuffix != -1) {
+               urlstring = urlstring.substring(0, indexSuffix);
+          }
+          request = new HttpPost(urlstring);
 
-          /* Set HTTP parameters
-           HttpParams params = new BasicHttpParams();
-           params.setParameter("key1", "value1");
-           params.setParameter("key2", "value2");
-           params.setParameter("key3", "value3");
-           request.setParams(params);
-          */
-          if (!schema.getL1_postdata().isEmpty()) {
+          if (page.getMetadata().containsKey(CompanyUtils.company_dyn_data)) {
+              /* Normally there won't be any POST DATA for ENTRY PAGE,
+               * this case is for site alike Microsoft, we are using the real 'NEXT' page button,
+               * the newly generated WebPage will contain POST DATA calculating basing on previous page
+               */
+              String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
+              ((HttpPost) request).setEntity(new StringEntity(data));
+              request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+          } else if (!schema.getL1_postdata().isEmpty()) {
               ((HttpPost) request).setEntity(new StringEntity(schema.getL1_postdata()));
               request.addHeader("Content-Type", "application/x-www-form-urlencoded");
               Http.LOG.debug("post data: " + schema.getL1_postdata());
@@ -152,11 +157,22 @@ public class HttpResponse implements Response {
        request = new HttpGet(url.toString());
     }
 
-    request.addHeader("User-Agent", http.getUserAgent());
+    //request.addHeader("User-Agent", http.getUserAgent());
     request.addHeader("Accept-Language", "zh-CN,en-us,en-gb,en;q=0.7,*;q=0.3");
     request.addHeader("Accept-Charset", "utf-8,ISO-8859-1;q=0.7,*;q=0.7");
     request.addHeader("Accept", "application/json,text/html,application/xml;q=0.9,application/xhtml+xml,text/xml;q=0.9,text/plain;q=0.8,image/png,*/*;q=0.5");
     request.addHeader("Accept-Encoding", "x-gzip, gzip, deflate");
+
+    request.addHeader("User-Agent", "Mozilla/5.0 (Windows NT 6.1; WOW64; rv:36.0) Gecko/20100101 Firefox/36.0");
+    //request.addHeader("X-Requested-With", "XMLHttpRequest");
+    //request.addHeader("X-MicrosoftAjax", "Delta=true");
+    //request.addHeader("Referer", "https://careers.microsoft.com/search.aspx");
+    request.addHeader("Cache-Control", "no-cache");
+
+    if ( !schema.getCookie().isEmpty() ) {
+        /* for site like microsoft */
+        request.addHeader("Cookie", schema.getCookie());
+    }
     if (page.getModifiedTime() > 0) {
        request.addHeader("If-Modified-Since", HttpDateFormat.toString(page.getModifiedTime()));
     }
@@ -251,6 +267,11 @@ public class HttpResponse implements Response {
       }
 
       content = EntityUtils.toByteArray(entity);
+
+      if (code == 200 && entity.getContentLength() <= 0 ) {
+          Http.LOG.warn(" response code 200, but no content ");
+          throw new IOException("response code 200, but no content");
+      }
 
         // add headers in metadata to row
       if (page.getHeaders() != null) {
