@@ -18,6 +18,7 @@ package org.apache.nutch.util;
 
 import org.apache.avro.util.Utf8;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.codec.digest.DigestUtils;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -50,7 +51,11 @@ public class TableUtil {
    * <p>
    * E.g. "http://bar.foo.com:8983/to/index.html?a=b" becomes
    * "com.foo.bar:http:8983/to/index.html?a=b".
-   * 
+   *
+   * No, We need have a friend crawler, so cant always fetching one site
+   * but leave other sites free, adding a random pattern but recreatable string.
+   * Don't need do the reverse now for better performance, but keep original implementation.
+   *
    * @param url
    *          url to be reversed
    * @return Reversed url
@@ -62,6 +67,9 @@ public class TableUtil {
     int port = url.getPort();
 
     StringBuilder buf = new StringBuilder();
+
+    String md5 = DigestUtils.md5Hex(url.toString()) ;
+    buf.append(md5);
 
     /* reverse host */
     reverseAppendSplits(host, buf);
@@ -86,6 +94,12 @@ public class TableUtil {
   }
 
   public static String unreverseUrl(String reversedUrl) {
+    if ( reversedUrl.length() > 32 ) {
+        reversedUrl = reversedUrl.substring(32, reversedUrl.length());
+    } else {
+        /* should throw an Exception here, but need change many calling function */
+        System.out.println("reversed url incorrect, running on corrupted data?");
+    }
     StringBuilder buf = new StringBuilder(reversedUrl.length() + 2);
 
     int pathBegin = reversedUrl.indexOf('/');

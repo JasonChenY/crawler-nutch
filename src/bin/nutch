@@ -206,9 +206,9 @@ CLASS=org.apache.nutch.crawl.GeneratorJob
 elif [ "$COMMAND" = "fetch" ] ; then
 CLASS=org.apache.nutch.fetcher.FetcherJob
 elif [ "$COMMAND" = "parse" ] ; then
-#CLASS=org.apache.nutch.parse.ParserJob
+CLASS=org.apache.nutch.parse.ParserJob
 #Following lines for watching how classes are loaded
-CLASS=" -verbose org.apache.nutch.parse.ParserJob"
+#CLASS=" -verbose org.apache.nutch.parse.ParserJob"
 elif [ "$COMMAND" = "updatedb" ] ; then
 CLASS=org.apache.nutch.crawl.DbUpdaterJob
 elif [ "$COMMAND" = "updatehostdb" ] ; then

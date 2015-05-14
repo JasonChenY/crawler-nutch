@@ -506,7 +506,7 @@ public class CompanyParser implements Parser {
       throws XPathExpressionException {
       XPathExpression expr;
       /* Next Page URL */
-      String nextpage_url = schema.getL2_prefix_for_nextpage_url();
+      String nextpage_url = schema.getL2_template_for_nextpage_url();
       if ( nextpage_url.isEmpty() ) {
           expr = xpath.compile(schema.getL2_schema_for_nextpage_url());
           nextpage_url = (String) expr.evaluate(doc, XPathConstants.STRING);
@@ -598,7 +598,7 @@ public class CompanyParser implements Parser {
                         System.out.println("Matcher found: " + key + " " + value);
                     }
                     */
-          String newpostdata = schema.getL2_nextpage_postdata();
+          String newpostdata = schema.getL2_template_for_nextpage_postdata();
 
           for ( int i=0; i < substitue_params.size(); i++ ) {
               String key = substitue_params.get(i).getName();
@@ -704,7 +704,7 @@ public class CompanyParser implements Parser {
       status.setMajorCode((int) ParseStatusCodes.SUCCESS);
       Parse parse = new Parse("page list", "page list", new Outlink[0], status);
 
-      if ( schema.getL2_prefix_for_nextpage_url().isEmpty() )  {
+      if ( schema.getL2_template_for_nextpage_url().isEmpty() )  {
           /* normal case where next page is a href, can generate list of new urls basing on pattern */
           Matcher matcher = pattern.matcher(page_list_url);
           if ( matcher.find() ) {
@@ -731,7 +731,7 @@ public class CompanyParser implements Parser {
           }
       } else {
           /* normally this should be using method POST with some dynamic data, we should do pattern match/replace inside dynamic data */
-          String l2_postdata = schema.getL2_nextpage_postdata();
+          String l2_postdata = schema.getL2_template_for_nextpage_postdata();
           if ( l2_postdata.isEmpty() ) {
               LOG.warn(key + " Dont know how to generate new pages without dynamic post data in schema");
               return parse;
@@ -908,7 +908,7 @@ public class CompanyParser implements Parser {
   private Parse getParse_entry_json(String url, WebPage page, CompanySchema schema, DocumentContext doc)
       throws PathNotFoundException {
       /* Next Page URL */
-      String nextpage_url = schema.getL2_prefix_for_nextpage_url();
+      String nextpage_url = schema.getL2_template_for_nextpage_url();
       if ( nextpage_url.isEmpty() ) {
           nextpage_url = doc.read(schema.getL2_schema_for_nextpage_url());
           LOG.debug(url + " Got nextpage url: " + nextpage_url);

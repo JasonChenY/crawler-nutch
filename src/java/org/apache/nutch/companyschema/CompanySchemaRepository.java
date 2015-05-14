@@ -117,10 +117,10 @@ public class CompanySchemaRepository {
           JSONObject page_list = (JSONObject)json.get("page_list");
           if ( page_list != null ) {
               companySchema.setL2_content_type((String) page_list.get("l2_content-type"));
-              companySchema.setL2_prefix_for_nextpage_url((String) page_list.get("l2_prefix_for_nextpage_url"));
+              companySchema.setL2_template_for_nextpage_url((String) page_list.get("l2_template_for_nextpage_url"));
               companySchema.setL2_schema_for_nextpage_url((String) page_list.get("l2_schema_for_nextpage_url"));
               companySchema.setL2_nextpage_method((String) page_list.get("l2_nextpage_method"));
-              companySchema.setL2_nextpage_postdata((String) page_list.get("l2_nextpage_postdata"));
+              companySchema.setL2_template_for_nextpage_postdata((String) page_list.get("l2_template_for_nextpage_postdata"));
               companySchema.setL2_nextpage_pattern((String) page_list.get("l2_nextpage_pattern"));
               companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
               companySchema.setL2_last_page((String) page_list.get("l2_last_page"));

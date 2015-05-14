@@ -25,10 +25,10 @@ public class CompanySchema {
     private String l1_postdata;
 
     private String l2_content_type;
-    private String l2_prefix_for_nextpage_url;
+    private String l2_template_for_nextpage_url;
     private String l2_schema_for_nextpage_url;
     private String l2_nextpage_method;
-    private String l2_nextpage_postdata;
+    private String l2_template_for_nextpage_postdata;
     private String l2_nextpage_pattern;
     private String l2_nextpage_increment;
     private String l2_last_page;
@@ -61,10 +61,10 @@ public class CompanySchema {
         setL1_postdata("");
 
         setL2_content_type("HTML");
-        setL2_prefix_for_nextpage_url("");
+        setL2_template_for_nextpage_url("");
         setL2_schema_for_nextpage_url("");
         setL2_nextpage_method("GET");
-        setL2_nextpage_postdata("");
+        setL2_template_for_nextpage_postdata("");
         setL2_nextpage_pattern("");
         setL2_nextpage_increment("1");
         setL2_last_page("");
@@ -136,12 +136,12 @@ public class CompanySchema {
         if (l2_content_type != null) this.l2_content_type = l2_content_type;
     }
 
-    public String getL2_prefix_for_nextpage_url() {
-        return l2_prefix_for_nextpage_url;
+    public String getL2_template_for_nextpage_url() {
+        return l2_template_for_nextpage_url;
     }
 
-    public void setL2_prefix_for_nextpage_url(String l2_prefix_for_nextpage_url) {
-        if (l2_prefix_for_nextpage_url != null) this.l2_prefix_for_nextpage_url = l2_prefix_for_nextpage_url;
+    public void setL2_template_for_nextpage_url(String l2_template_for_nextpage_url) {
+        if (l2_template_for_nextpage_url != null) this.l2_template_for_nextpage_url = l2_template_for_nextpage_url;
     }
 
     public String getL2_schema_for_nextpage_url() {
@@ -163,12 +163,12 @@ public class CompanySchema {
             this.l2_nextpage_method = "GET";
     }
 
-    public String getL2_nextpage_postdata() {
-        return l2_nextpage_postdata;
+    public String getL2_template_for_nextpage_postdata() {
+        return l2_template_for_nextpage_postdata;
     }
 
-    public void setL2_nextpage_postdata(String l2_nextpage_postdata) {
-        if (l2_nextpage_postdata != null) this.l2_nextpage_postdata = l2_nextpage_postdata;
+    public void setL2_template_for_nextpage_postdata(String l2_template_for_nextpage_postdata) {
+        if (l2_template_for_nextpage_postdata != null) this.l2_template_for_nextpage_postdata = l2_template_for_nextpage_postdata;
     }
 
     public String getL2_nextpage_pattern() {
@@ -315,10 +315,10 @@ public class CompanySchema {
         System.out.println("l1_postdata : " + l1_postdata);
         System.out.println("  ");
         System.out.println("l2_content_type : " + l2_content_type);
-        System.out.println("l2_prefix_for_nextpage_url : " + l2_prefix_for_nextpage_url);
+        System.out.println("l2_prefix_for_nextpage_url : " + l2_template_for_nextpage_url);
         System.out.println("l2_schema_for_nextpage_url : " + l2_schema_for_nextpage_url);
         System.out.println("l2_nextpage_method : " + l2_nextpage_method);
-        System.out.println("l2_nextpage_postdata : " + l2_nextpage_postdata);
+        System.out.println("l2_template_for_nextpage_postdata : " + l2_template_for_nextpage_postdata);
         System.out.println("l2_nextpage_pattern : " + l2_nextpage_pattern);
         System.out.println("l2_nextpage_increment : " + l2_nextpage_increment);
         System.out.println("l2_last_page : " + l2_last_page);
