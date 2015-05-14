@@ -55,7 +55,7 @@
     </dependency>
 
     <dependency org="com.ibm.icu" name="icu4j" rev="4.0.1" />
-    <dependency org="org.apache.tika" name="tika-core" rev="1.6" />
+    <dependency org="org.apache.tika" name="tika-core" rev="1.8" />
     <dependency org="com.googlecode.juniversalchardet" name="juniversalchardet" rev="1.0.3"/>
 
     <dependency org="log4j" name="log4j" rev="1.2.15" conf="*->master" />
@@ -157,11 +157,23 @@
     <dependency org="de.agilecoders.wicket" name="wicket-bootstrap-core" rev="0.9.2" conf="*->default" />
     <dependency org="de.agilecoders.wicket" name="wicket-bootstrap-extensions" rev="0.9.2" conf="*->default" />
 
+    <dependency org="net.sourceforge.nekohtml" name="nekohtml" rev="1.9.19" conf="*->master"/>
+
     <dependency org="com.googlecode.json-simple" name="json-simple" rev="1.1.1" conf="*->master"/>
     <dependency org="com.jayway.jsonpath" name="json-path" rev="2.0.0" conf="*->default"/>
 
+    <dependency org="org.apache.tika" name="tika-core" rev="1.8" conf="*->default"/>
+    <dependency org="org.apache.tika" name="tika-parsers" rev="1.8" conf="*->default">
+      <exclude org="de.l3s.boilerpipe" name="boilerpipe" />
+    </dependency>
+      <!-- we need some function inside tika-server, but can't take all of it, there is some
+      stuff inside it will make the NekoHTML not work, now extract out necessary library inside it-->
+      <!--dependency org="org.apache.tika" name="tika-server" rev="1.8" conf="*->default"/-->
+    <dependency org="org.apache.pdfbox" name="pdfbox" rev="1.8.9" conf="*->runtime"/>
+    <dependency org="org.apache.pdfbox" name="fontbox" rev="1.8.9" conf="*->runtime"/>
+    <dependency org="org.apache.pdfbox" name="jempbox" rev="1.8.9" conf="*->runtime"/>
 
-    <!--global exclusion -->
+      <!--global exclusion -->
     <exclude module="ant" />
     <exclude module="slf4j-jdk14" />
     <exclude module="slf4j-simple" />

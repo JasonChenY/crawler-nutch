@@ -21,37 +21,64 @@
 # UNLIKE THE NUTCH ALL-IN-ONE-CRAWL COMMAND THIS SCRIPT DOES THE LINK INVERSION AND 
 # INDEXING FOR EACH BATCH
 
-SEEDDIR="$1"
-CRAWL_ID="$2"
-if [ "$#" -eq 3 ]; then
-    LIMIT="$3"
-elif [ "$#" -eq 4 ]; then
-     SOLRURL="$3"
-     LIMIT="$4"
-else
-    echo "Unknown # of arguments $#"
-    echo "Usage: crawl <seedDir> <crawlID> [<solrUrl>] <numberOfRounds>"
-    exit -1;
+#H#crawl [--seedir=<seedDir>]
+#H#      [--id=<crawlId>]                           default:WebPages
+#H#      [--limit=<numberOfRounds>]
+#H#      [--solr=<solrURL>]                http://localhost:8080/solr
+#H#      [--tasks=<number MapReducer Task>]         default:1
+#H#      [--fetches=<pages to fetch each round>]    default:10
+#H#      [--threads=<threads>]                      default:10
+#H#      [--inject[=<yes|no>]                       default:no
+while echo "$1" | grep -q '^--'; do
+    if echo $1 | grep -q =; then
+        o=$(echo "$1" | cut -d= -f1 | sed -e 's,-,_,g')
+        v=$(echo "$1" | cut -d= -f2-)
+        eval "$o=\"$v\""
+    else
+        o=$(echo "$1" | sed -e 's,-,_,g')
+        eval "$o=yes"
+    fi
+    shift
+done
+unset o v
+long_opts=`set | grep '^__' | cut -d= -f1`
+
+help() {
+    grep '^#H#' $0 | cut -c4-
+    exit 0
+}
+#test -n "$1" || help
+echo "$1" | grep -qi "^help\|-h" && help
+
+if [ -z $__seeddir ]; then
+   __seeddir="/sdk/tmp/seed.txt"
+fi
+if [ -z $__id ]; then
+   __id="WebPages"
+fi
+if [ -z $solr ]; then
+   __solr="http://127.0.0.1:8080/solr"
+fi
+if [ -z $__limit ]; then
+   __limit=1
+fi
+if [ -z $__tasks ]; then
+   __tasks=1
+fi
+if [ -z $__fetches ]; then
+   __fetches=10
+fi
+if [ -z $__threads ]; then
+   __threads=10
+fi
+if [ -z $__inject ]; then
+   __inject="no"
 fi
 
-if [ "$SEEDDIR" = "" ]; then
-    echo "Missing seedDir : crawl <seedDir> <crawlID> [<solrURL>] <numberOfRounds>"
-    exit -1;
-fi
-
-if [ "$CRAWL_ID" = "" ]; then
-    echo "Missing crawlID : crawl <seedDir> <crawlID> [<solrURL>] <numberOfRounds>"
-    exit -1;
-fi
-
-if [ "$SOLRURL" = "" ]; then
-    echo "No SOLRURL specified. Skipping indexing."
-fi
-
-if [ "$LIMIT" = "" ]; then
-    echo "Missing numberOfRounds : crawl <seedDir> <crawlID> [<solrURL>] <numberOfRounds>"
-    exit -1;
-fi
+SEEDDIR=$__seeddir
+CRAWL_ID=$__id
+LIMIT=$__limit
+SOLRURL=$__solr
 
 #############################################
 # MODIFY THE PARAMETERS BELOW TO YOUR NEEDS #
@@ -63,12 +90,12 @@ numSlaves=1
 # and the total number of available tasks
 # sets Hadoop parameter "mapred.reduce.tasks"
 #numTasks=`expr $numSlaves \* 2`
-numTasks=`expr $numSlaves \* 1`
+numTasks=`expr $numSlaves \* $__tasks`
 
 # number of urls to fetch in one iteration
 # 250K per task?
 #sizeFetchlist=`expr $numSlaves \* 50000`
-sizeFetchlist=`expr $numSlaves \* 500`
+sizeFetchlist=`expr $numSlaves \* $__fetches`
 
 # time limit for feching
 timeLimitFetch=180
@@ -120,9 +147,10 @@ function __bin_nutch {
 
 
 # initial injection
-echo "Injecting seed URLs"
-__bin_nutch inject "$SEEDDIR" -crawlId "$CRAWL_ID"
-
+if [ "$__inject" = "yes" ]; then
+    echo "Injecting seed URLs"
+    __bin_nutch inject "$SEEDDIR" -crawlId "$CRAWL_ID"
+fi
 
 # main loop : rounds of generate - fetch - parse - update
 for ((a=1; a <= LIMIT ; a++))
@@ -158,7 +186,7 @@ do
 
   echo "Fetching : "
   #__bin_nutch fetch $commonOptions -D fetcher.timelimit.mins=$timeLimitFetch $batchId -crawlId "$CRAWL_ID" -threads 50
-  __bin_nutch fetch $commonOptions -D fetcher.timelimit.mins=$timeLimitFetch $batchId -crawlId "$CRAWL_ID" -threads 1
+  __bin_nutch fetch $commonOptions -D fetcher.timelimit.mins=$timeLimitFetch $batchId -crawlId "$CRAWL_ID" -threads $__threads
 
   # parsing the batch
   echo "Parsing : "

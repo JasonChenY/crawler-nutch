@@ -51,6 +51,7 @@ public class CompanyIndexingFilter implements IndexingFilter {
     FIELDS.add(WebPage.Field.TEXT);
     FIELDS.add(WebPage.Field.FETCH_TIME);
     FIELDS.add(WebPage.Field.METADATA);
+    FIELDS.add(WebPage.Field.REPR_URL);
   }
 
   public NutchDocument filter(NutchDocument doc, String url, WebPage page)
@@ -64,6 +65,7 @@ public class CompanyIndexingFilter implements IndexingFilter {
     String reprUrl = null;
     // if (page.isReadable(WebPage.Field.REPR_URL.getIndex())) {
     reprUrl = TableUtil.toString(page.getReprUrl());
+    if ( reprUrl != null ) LOG.info(url + " reprUrl: " + reprUrl);
     // }
 
     String host = null;
@@ -114,6 +116,7 @@ public class CompanyIndexingFilter implements IndexingFilter {
     String job_title = Bytes.toString(page.getMetadata().get(CompanyUtils.company_job_title));
     String job_location = Bytes.toString(page.getMetadata().get(CompanyUtils.company_job_location));
     String job_date = Bytes.toString(page.getMetadata().get(CompanyUtils.company_job_date));
+
     doc.add("job_company", job_company);
     doc.add("job_title", job_title);
     doc.add("job_location", job_location);

@@ -26,6 +26,9 @@
          <export name="*"/>
       </library>
       <library name="xercesImpl-2.9.1.jar"/>
+      <!--library name="fontbox-1.8.9.jar"/>
+      <library name="jempbox-1.8.9.jar"/>
+      <library name="pdfbox-1.8.9.jar"/-->
    </runtime>
 
    <requires>
@@ -39,7 +42,7 @@
 
       <implementation id="org.apache.nutch.parse.company.CompanyParser"
                       class="org.apache.nutch.parse.company.CompanyParser">
-        <parameter name="contentType" value="text/html|application/xhtml+xml|text/aspdotnet|application/json"/>
+        <parameter name="contentType" value="text/html|application/xhtml+xml|text/aspdotnet|application/json|text/plain|application/pdf"/>
         <parameter name="pathSuffix" value=""/>
       </implementation>
 

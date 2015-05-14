@@ -132,8 +132,9 @@ public class CompanySchemaRepository {
           JSONObject job_list = (JSONObject)json.get("job_list");
           if ( job_list != null ) {
               companySchema.setL2_schema_for_jobs((String) job_list.get("l2_schema_for_jobs"));
-              companySchema.setL2_prefix_for_joburl((String) job_list.get("l2_prefix_for_joburl"));
+              companySchema.setL2_template_for_joburl((String) job_list.get("l2_template_for_joburl"));
               companySchema.setL2_schema_for_joburl((String) job_list.get("l2_schema_for_joburl"));
+              companySchema.setL2_schema_for_joburl_repr((String) job_list.get("l2_schema_for_joburl_repr"));
               companySchema.setL2_job_title((String) job_list.get("l2_job_title"));
               companySchema.setL2_job_location((String) job_list.get("l2_job_location"));
               companySchema.setL2_job_date((String) job_list.get("l2_job_date"));
@@ -143,6 +144,8 @@ public class CompanySchemaRepository {
           JSONObject job = (JSONObject)json.get("job");
           if ( job != null ) {
               companySchema.setL3_job_title((String) job.get("l3_job_title"));
+              companySchema.setL3_job_date((String) job.get("l3_job_date"));
+              companySchema.setL3_job_date_format((String) job.get("l3_job_date_format"));
               companySchema.setL3_job_description((String) job.get("l3_job_description"));
           }
 

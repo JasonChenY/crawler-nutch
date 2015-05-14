@@ -73,7 +73,7 @@
 
 <property>
   <name>runtime.debug</name>
-  <value>true</value>
+  <value>false</value>
   <description>if turned on, will only generate one more list page, and extract 1 job on each list page</description>
 </property>
 
@@ -82,6 +82,13 @@
   <value>true</value>
   <description>Alibaba's l2 JSON file contains l3 information already, dont need to fetch any more.
   </description>
+</property>
+
+<property>
+  <name>parser.character.encoding.default</name>
+  <value>UTF-8</value>
+  <description>The character encoding to fall back to when no other information
+            is available</description>
 </property>
 
 </configuration>

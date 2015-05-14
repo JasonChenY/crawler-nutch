@@ -50,6 +50,10 @@
         <plugin id="parse-company" />
     </mimeType>
 
+    <mimeType name="application/pdf">
+        <plugin id="parse-company" />
+    </mimeType>
+
 	<mimeType name="application/rss+xml">
 	    <plugin id="parse-tika" />
 	    <plugin id="feed" />

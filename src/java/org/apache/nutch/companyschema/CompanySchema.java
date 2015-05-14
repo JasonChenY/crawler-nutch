@@ -38,8 +38,9 @@ public class CompanySchema {
     private String l2_nextpage_endflag;
 
     private String l2_schema_for_jobs;
-    private String l2_prefix_for_joburl;
+    private String l2_template_for_joburl;
     private String l2_schema_for_joburl;
+    private String l2_schema_for_joburl_repr; /* For Danone, one url for fetch pdf, another(repr) for apply */
     private String l2_job_title;
     private String l2_job_location;
     private String l2_job_date;
@@ -47,6 +48,9 @@ public class CompanySchema {
     private String l2_job_description;
 
     private String l3_job_title;
+    /* field for Danone, job post date in l3 pdf file */
+    private String l3_job_date;
+    private String l3_job_date_format;
     private String l3_job_description;
 
     public CompanySchema(String n) {
@@ -69,14 +73,17 @@ public class CompanySchema {
         setL2_nextpage_endflag("");
 
         setL2_schema_for_jobs("");
-        setL2_prefix_for_joburl("");
+        setL2_template_for_joburl("");
         setL2_schema_for_joburl("");
+        setL2_schema_for_joburl_repr("");
         setL2_job_title("");
         setL2_job_location("");
         setL2_job_date("");
         setL2_job_description("");
 
         setL3_job_title("");
+        setL3_job_date("");
+        setL3_job_date_format("");
         setL3_job_description("");
     }
 
@@ -212,12 +219,12 @@ public class CompanySchema {
         if (l2_schema_for_jobs != null) this.l2_schema_for_jobs = l2_schema_for_jobs;
     }
 
-    public String getL2_prefix_for_joburl() {
-        return l2_prefix_for_joburl;
+    public String getL2_template_for_joburl() {
+        return l2_template_for_joburl;
     }
 
-    public void setL2_prefix_for_joburl(String l2_prefix_for_joburl) {
-        if (l2_prefix_for_joburl != null) this.l2_prefix_for_joburl = l2_prefix_for_joburl;
+    public void setL2_template_for_joburl(String l2_template_for_joburl) {
+        if (l2_template_for_joburl != null) this.l2_template_for_joburl = l2_template_for_joburl;
     }
 
     public String getL2_schema_for_joburl() {
@@ -226,6 +233,14 @@ public class CompanySchema {
 
     public void setL2_schema_for_joburl(String l2_schema_for_joburl) {
         if (l2_schema_for_joburl != null) this.l2_schema_for_joburl = l2_schema_for_joburl;
+    }
+
+    public String getL2_schema_for_joburl_repr() {
+        return l2_schema_for_joburl_repr;
+    }
+
+    public void setL2_schema_for_joburl_repr(String l2_schema_for_joburl_repr) {
+        if (l2_schema_for_joburl_repr != null) this.l2_schema_for_joburl_repr = l2_schema_for_joburl_repr;
     }
 
     public String getL2_job_title() {
@@ -268,6 +283,22 @@ public class CompanySchema {
         if (l3_job_title != null) this.l3_job_title = l3_job_title;
     }
 
+    public String getL3_job_date() {
+        return l3_job_date;
+    }
+
+    public void setL3_job_date(String l3_job_date) {
+        if (l3_job_date != null) this.l3_job_date = l3_job_date;
+    }
+
+    public String getL3_job_date_format() {
+        return l3_job_date_format;
+    }
+
+    public void setL3_job_date_format(String l3_job_date_format) {
+        if (l3_job_date_format != null) this.l3_job_date_format = l3_job_date_format;
+    }
+
     public String getL3_job_description() {
         return l3_job_description;
     }
@@ -296,14 +327,17 @@ public class CompanySchema {
         System.out.println("l2_nextpage_endflag : " + l2_nextpage_endflag);
         System.out.println("  ");
         System.out.println("l2_schema_for_jobs : " + l2_schema_for_jobs);
-        System.out.println("l2_prefix_for_joburl : " + l2_prefix_for_joburl);
+        System.out.println("l2_template_for_joburl : " + l2_template_for_joburl);
         System.out.println("l2_schema_for_joburl : " + l2_schema_for_joburl);
+        System.out.println("l2_schema_for_joburl_repr : " + l2_schema_for_joburl_repr);
         System.out.println("l2_job_title : " + l2_job_title);
         System.out.println("l2_job_location : " + l2_job_location);
         System.out.println("l2_job_date : " + l2_job_date);
         System.out.println("l2_job_description : " + l2_job_description);
         System.out.println("  ");
         System.out.println("l3_job_title: " + l3_job_title);
+        System.out.println("l3_job_date : " + l3_job_date);
+        System.out.println("l3_job_date_format : " + l3_job_date_format);
         System.out.println("l3_job_description : " + l3_job_description);
     }
 }

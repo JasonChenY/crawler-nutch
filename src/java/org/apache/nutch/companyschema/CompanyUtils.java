@@ -1,16 +1,12 @@
 package org.apache.nutch.companyschema;
 
 import org.apache.avro.util.Utf8;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.List;
-
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.nutch.storage.WebPage;
 import org.apache.nutch.util.Bytes;
+import java.nio.ByteBuffer;
 
 public class CompanyUtils {
+
     public static Utf8 company_key = new Utf8("__company__");
     public static Utf8 company_dyn_data = new Utf8("__company_dyn_data__");
     public static Utf8 company_link_type = new Utf8("__company_link_type__");
@@ -82,35 +78,5 @@ public class CompanyUtils {
             return LINK_TYPE_SUMMARY.equals(Bytes.toString(page.getMetadata().get(company_link_type)));
         else
             return false;
-    }
-
-    private static List<NameValuePair> months = initialize_months();
-    private static List<NameValuePair> initialize_months() {
-        List<NameValuePair> months = new ArrayList<NameValuePair>();
-
-        try {
-            months.add(new BasicNameValuePair(new String("一月".getBytes(), "UTF-8"), "Jan"));
-            months.add(new BasicNameValuePair(new String("一月".getBytes(), "UTF-8"), "Jan"));
-            months.add(new BasicNameValuePair(new String("二月".getBytes(), "UTF-8"), "Feb"));
-            months.add(new BasicNameValuePair(new String("三月".getBytes(), "UTF-8"), "Mar"));
-            months.add(new BasicNameValuePair(new String("四月".getBytes(), "UTF-8"), "Apr"));
-            months.add(new BasicNameValuePair(new String("五月".getBytes(), "UTF-8"), "May"));
-            months.add(new BasicNameValuePair(new String("六月".getBytes(), "UTF-8"), "Jun"));
-            months.add(new BasicNameValuePair(new String("七月".getBytes(), "UTF-8"), "Jul"));
-            months.add(new BasicNameValuePair(new String("八月".getBytes(), "UTF-8"), "Aug"));
-            months.add(new BasicNameValuePair(new String("九月".getBytes(), "UTF-8"), "Sep"));
-            months.add(new BasicNameValuePair(new String("十月".getBytes(), "UTF-8"), "Oct"));
-            months.add(new BasicNameValuePair(new String("十一月".getBytes(), "UTF-8"), "Nov"));
-            months.add(new BasicNameValuePair(new String("十二月".getBytes(), "UTF-8"), "Dec"));
-        } catch (Exception e) {
-        }
-        return months;
-    }
-
-    public static String convert_month(String str) {
-        for ( int i = 0; i < months.size(); i++ ) {
-            str = str.replaceAll(months.get(i).getName(), months.get(i).getValue());
-        }
-        return str;
     }
 }

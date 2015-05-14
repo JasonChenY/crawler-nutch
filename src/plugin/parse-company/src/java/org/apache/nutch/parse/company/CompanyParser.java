@@ -17,10 +17,13 @@
 
 package org.apache.nutch.parse.company;
 
+import java.io.*;
+import java.io.BufferedWriter;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.Integer;
@@ -81,13 +84,13 @@ import java.util.Iterator;
 import javax.xml.namespace.NamespaceContext;
 
 import org.apache.nutch.companyschema.CompanyUtils;
+import org.apache.nutch.companyschema.DateUtils;
 import org.apache.nutch.companyschema.CompanySchema;
 import org.apache.nutch.companyschema.CompanySchemaRepository;
 
 import org.apache.nutch.indexer.solr.SolrUtils;
 
 import java.util.Date;
-import org.apache.solr.common.util.DateUtil;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -118,8 +121,11 @@ import org.apache.http.message.BasicNameValuePair;
 import java.util.ArrayList;
 
 /* for write debug POST data to file */
-import java.io.FileWriter;
-import java.io.BufferedWriter;
+
+import org.apache.nutch.parse.company.PDF2HTML;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import org.w3c.dom.NamedNodeMap;
 
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
@@ -241,6 +247,50 @@ public class CompanyParser implements Parser {
 
   private Configuration conf;
 
+  class ByteArrayInOutStream extends ByteArrayOutputStream {
+        public ByteArrayInOutStream() {
+            super();
+        }
+        public ByteArrayInOutStream(int size) {
+            super(size);
+        }
+        public ByteArrayInputStream getInputStream() {
+            ByteArrayInputStream in = new ByteArrayInputStream(this.buf);
+            this.buf = null;
+            return in;
+        }
+    }
+
+    public static void print(Node node, String indent) {
+        System.out.print(indent+node.getClass().getName()+"->");
+        if (node.getNodeName() != null) {
+            System.out.print("   [" + node.getNodeName()+"]   ");
+            NamedNodeMap attrs = node.getAttributes();
+            if ( attrs != null ) {
+                for (int i= 0; i < attrs.getLength(); i++ ) {
+                    if ( attrs.item(i).getNodeName() != null )
+                        System.out.print(attrs.item(i).getNodeName());
+                    System.out.print("@");
+                    if (attrs.item(i).getNodeValue() != null )
+                        System.out.print(attrs.item(i).getNodeValue());
+                    System.out.print("  ");
+                }
+            }
+        }
+        if (node.getNodeValue() != null){
+            if("".equals(node.getNodeValue().trim())){
+            } else {
+                System.out.print(node.getNodeValue());
+            }
+        }
+        System.out.println("");
+        Node child = node.getFirstChild();
+        while (child != null) {
+            print(child, indent+"  ");
+            child = child.getNextSibling();
+        }
+    }
+
   public Parse getParse(String url, WebPage page) {
       Parse parse = null;
       String name = CompanyUtils.getCompanyName(page);
@@ -293,7 +343,6 @@ public class CompanyParser implements Parser {
       if (LOG.isTraceEnabled()) {
         LOG.trace("Parsing..." + encoding);
       }
-        LOG.warn("Parsing..." + encoding);
 
       String content_type = "html";
       Utf8 content_type_key = new Utf8(org.apache.nutch.net.protocols.Response.CONTENT_TYPE);
@@ -301,6 +350,34 @@ public class CompanyParser implements Parser {
           java.lang.CharSequence content_type_utf8 = page.getHeaders().get(content_type_key);
           content_type = content_type_utf8.toString();
           LOG.debug(url + " : " + content_type);
+      }
+
+      if ( content_type.equals("application/pdf") ) {
+          /* Danone case */
+          try {
+              ByteArrayInOutStream output = new ByteArrayInOutStream();
+              PDF2HTML p2h = new PDF2HTML();
+              p2h.process(input.getByteStream(), output);
+              output.flush();
+              /*
+              if (LOG.isDebugEnabled()) {
+                  LOG.debug(url + " After translate's outputstream : " + output.toString("UTF-8"));
+              }*/
+              input = new InputSource(output.getInputStream());
+              input.setEncoding(encoding);
+              /*
+              Dangerous: this is only for extreme case debug, it will eat bytes
+              if ( LOG.isDebugEnabled() ) {
+                  String after = org.apache.commons.io.IOUtils.toString(input.getByteStream());
+                  LOG.debug(url + " After translate's inputstream : " + after);
+              }
+              */
+              LOG.debug(url + " translate pdf to html ");
+              content_type = "text/html";
+          } catch ( Exception e) {
+              LOG.warn(url + " failed to translate pdf to html ");
+              throw e;
+          }
       }
 
       /* no better way, we have 3 kinds of pages, two kinds of content type,
@@ -315,7 +392,7 @@ public class CompanyParser implements Parser {
         try {
           parser.setFeature("http://cyberneko.org/html/features/scanner/allow-selfclosing-iframe", true);
           parser.setFeature("http://cyberneko.org/html/features/augmentations", true);
-          parser.setProperty("http://cyberneko.org/html/properties/default-encoding", defaultCharEncoding);
+          parser.setProperty("http://cyberneko.org/html/properties/default-encoding", encoding);
           parser.setFeature("http://cyberneko.org/html/features/scanner/ignore-specified-charset", true);
           parser.setFeature("http://cyberneko.org/html/features/balance-tags/ignore-outside-content", false);
           parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
@@ -323,26 +400,37 @@ public class CompanyParser implements Parser {
           parser.parse(input);
 
           Document doc = parser.getDocument();
+          /* Debug to check how file is parsed
+          print(doc, "");
+          */
 
 	      /* Create xpath */
           XPathFactory xpathFactory = XPathFactory.newInstance();
           XPath xpath = xpathFactory.newXPath();
 
           /* Setup xpath's namespace */
-          DocumentType doctype = doc.getDoctype();
-          if ( doctype != null && doctype.getName().equalsIgnoreCase("html") ) {
+          //DocumentType doctype = doc.getDoctype();
+          //if ( doctype != null && doctype.getName().equalsIgnoreCase("html") ) {}
             NodeList root = doc.getElementsByTagName("HTML");
             if (root != null) {
               Element head = (Element) root.item(0);
-              final String ns = head.getNamespaceURI();
-              LOG.info("namespace: " + ns);
-              HashMap<String, String> prefMap = new HashMap<String, String>() {{
-                  put("main", ns);
-              }};
-              SimpleNamespaceContext namespaces = new SimpleNamespaceContext(prefMap);
-              xpath.setNamespaceContext(namespaces);
+              if ( head != null ) {
+                  final String ns = head.getNamespaceURI();
+                  LOG.info("namespace: " + ns);
+                  if (ns != null) {
+                      HashMap<String, String> prefMap = new HashMap<String, String>() {{
+                          put("main", ns);
+                      }};
+                      SimpleNamespaceContext namespaces = new SimpleNamespaceContext(prefMap);
+                      xpath.setNamespaceContext(namespaces);
+                  }
+              } else {
+                  LOG.warn(url + " Unbelievable, no HTML Element(Microsoft) ");
+              }
+            } else {
+              LOG.warn(url + " dont have HTML element ");
             }
-          }
+
             if ( CompanyUtils.isEntryLink(page)) {
                 parse = getParse_entry_html(url, page, schema, doc, xpath);
                 parse = getParse_list_html(parse, url, page, schema, doc, xpath);
@@ -377,10 +465,10 @@ public class CompanyParser implements Parser {
       LOG.error("Failed with the following DOMException: ", e);
       return ParseStatusUtils.getEmptyParse(e, getConf());
     }  catch (XPathExpressionException e) {
-      LOG.error("Failed to parse with schema " + e.getMessage())  ;
+      LOG.error("Failed to parse with schema ", e)  ;
       return ParseStatusUtils.getEmptyParse(e, getConf());
     } catch ( PathNotFoundException e ) {
-      LOG.error("Failed to parse schema with json-path " + e.getMessage())  ;
+      LOG.error("Failed to parse schema with json-path ", e)  ;
       return ParseStatusUtils.getEmptyParse(e, getConf());
     } catch (Exception e) {
       LOG.error("Failed with the following Exception: ", e);
@@ -537,7 +625,7 @@ public class CompanyParser implements Parser {
 
           if ( runtime_debug ) {
               try {
-                  String date = DateUtil.getThreadLocalDateFormat().format(new Date());
+                  String date = DateUtils.getThreadLocalDateFormat().format(new Date());
                   LOG.debug(url + " write generated post data to file /tmp/" + date);
                   FileWriter fw = new FileWriter("/tmp/" + date + ".data", true);
                   BufferedWriter bw = new BufferedWriter(fw);
@@ -698,17 +786,29 @@ public class CompanyParser implements Parser {
           for ( int i = 0; i < jobs.getLength(); i++ ) {
               Element job = (Element)jobs.item(i);
 
-              String l2_prefix_for_joburl = schema.getL2_prefix_for_joburl();
-              if ( !l2_prefix_for_joburl.isEmpty() ) {
-                  LOG.debug(url + " (Abnormal case? ) joburl prefix: " + l2_prefix_for_joburl);
+              String l2_template_for_joburl = schema.getL2_template_for_joburl();
+              if ( !l2_template_for_joburl.isEmpty() ) {
+                  LOG.debug(url + " (Abnormal case? ) joburl tempate: " + l2_template_for_joburl);
               }
 
               expr = xpath.compile(schema.getL2_schema_for_joburl());
               String link = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
-              link = l2_prefix_for_joburl + link;
+              if ( link.isEmpty() ) {
+                  continue;
+                  /* Danone case, the last page will have 7 job items, but some of them are empty */
+              }
+              if ( !l2_template_for_joburl.isEmpty() ) {
+                  link = String.format(l2_template_for_joburl, link);
+              }
               LOG.debug(url + " contain link: " + link);
-
               String target = guess_URL(link, url, schema.getL1_url());
+
+              String l2_joburl_repr = "";
+              if ( !schema.getL2_schema_for_joburl_repr().isEmpty() ) {
+                  expr = xpath.compile(schema.getL2_schema_for_joburl_repr());
+                  l2_joburl_repr = (String) ((String) expr.evaluate(job, XPathConstants.STRING)).trim();
+                  l2_joburl_repr = guess_URL(l2_joburl_repr, url, schema.getL1_url());
+              }
 
               expr = xpath.compile(schema.getL2_job_title());
               String title = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
@@ -720,26 +820,12 @@ public class CompanyParser implements Parser {
               String location = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
               location = SolrUtils.stripNonCharCodepoints(location);
 
-              expr = xpath.compile(schema.getL2_job_date());
-              String date = (String) expr.evaluate(job, XPathConstants.STRING);
-              date = date.trim();
-              date = CompanyUtils.convert_month(date);
-
-              //date = SolrUtils.stripNonCharCodepoints(date);
-              try {
-                  /* we need use facet.fields on job post date, which need specific date format
-                   * And different company might use different format, need to unify them.
-                   * Fortunately there is already common function in DateUtil, hope can cope with all.
-                   * If not, we might extend the schema to add our own format.
-                   */
-                  Date d = DateUtil.parseDate(date);
-                  date = DateUtil.getThreadLocalDateFormat().format(d);
-              } catch (java.text.ParseException pe) {
-                  LOG.warn(schema.getName() + " invalid date format(need extend our schema): " + pe.getMessage());
-                  /* let it continue with current system time */
-                  date = DateUtil.getThreadLocalDateFormat().format(new Date());
+              String date = "";
+              if ( !schema.getL2_job_date().isEmpty() ) {
+                  expr = xpath.compile(schema.getL2_job_date());
+                  date = (String) expr.evaluate(job, XPathConstants.STRING);
+                  date = DateUtils.formatDate(date);
               }
-
               WebPage  newPage = WebPage.newBuilder().build();
               newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
               CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
@@ -750,6 +836,11 @@ public class CompanyParser implements Parser {
               newPage.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(date.getBytes()));
 
               newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+              if ( !l2_joburl_repr.isEmpty() ) {
+                  newPage.setReprUrl(l2_joburl_repr);
+                  LOG.debug(url + " with repr url: " + l2_joburl_repr);
+              }
 
               /*if ( !schema.getL2_nextpage_postdata_inherit_regex().isEmpty() ) {
                Microsoft: Seems fetching summary page will distrub further 'NEXT' page,
@@ -770,28 +861,47 @@ public class CompanyParser implements Parser {
   }
   private Parse getParse_summary_html(String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException, MalformedURLException, PathNotFoundException {
-      XPathExpression expr = xpath.compile(schema.getL3_job_title());
-      String title = (String) expr.evaluate(doc, XPathConstants.STRING);
-      title.replaceAll("\\s+", " ");
-      title = SolrUtils.stripNonCharCodepoints(title);
+      XPathExpression expr;
+      String l3_title = "";
+      /* l3 title is totally optional */
+      if ( !schema.getL3_job_title().isEmpty() ) {
+          expr = xpath.compile(schema.getL3_job_title());
+          l3_title = (String) expr.evaluate(doc, XPathConstants.STRING);
+          l3_title.replaceAll("\\s+", " ");
+          l3_title = SolrUtils.stripNonCharCodepoints(l3_title);
+      }
 
+      String l3_date = "";
+      if ( !schema.getL3_job_date().isEmpty() ) {
+          expr = xpath.compile(schema.getL3_job_date());
+          l3_date = (String) expr.evaluate(doc, XPathConstants.STRING);
+          LOG.info(url + " Date: " + l3_date);
+          if ( schema.getL3_job_date_format().isEmpty() )
+              l3_date = DateUtils.formatDate(l3_date);
+          else
+              l3_date = DateUtils.formatDate(l3_date, schema.getL3_job_date_format());
+          /* Normally job date should be extracted from L2 page, but if configured which means use this */
+          page.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(l3_date.getBytes()));
+      }
+
+      String l3_description = "";
       expr = xpath.compile(schema.getL3_job_description());
-      String text = "";
       NodeList nodes = (NodeList)expr.evaluate(doc, XPathConstants.NODESET);
       for ( int i = 0; i < nodes.getLength(); i++ ) {
           Node node = nodes.item(i);
-          text += DOM2HTML.toString(node);
+          l3_description += DOM2HTML.toString(node);
       }
-      text = SolrUtils.stripNonCharCodepoints(text);
+      l3_description = SolrUtils.stripNonCharCodepoints(l3_description);
 
-      LOG.info(url + " Title: " + title + " Description: " + text);
+      LOG.info(url + " Title: " + l3_title +
+              "\nDescription: " + ((l3_description.length()>200)?l3_description.substring(0, 200):l3_description));
       /* something to be done here,
        * we can select don't configure abstract & description in schema file,
        * then fallback to the default html parser implementation, html doc title and full page text.
        */
       ParseStatus status = ParseStatus.newBuilder().build();
       status.setMajorCode((int) ParseStatusCodes.SUCCESS);
-      Parse parse = new Parse(text, title, new Outlink[0], status);
+      Parse parse = new Parse(l3_description, l3_title, new Outlink[0], status);
       return parse;
   }
 
@@ -803,7 +913,7 @@ public class CompanyParser implements Parser {
           nextpage_url = doc.read(schema.getL2_schema_for_nextpage_url());
           LOG.debug(url + " Got nextpage url: " + nextpage_url);
       } else {
-         LOG.debug(url + " (Normal Case) use l2_prefix_for_nextpage_url instead of l2_schema_for_nextpage_url");
+          LOG.debug(url + " (Normal Case) use l2_prefix_for_nextpage_url instead of l2_schema_for_nextpage_url");
       }
       nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
 
@@ -848,9 +958,9 @@ public class CompanyParser implements Parser {
           Configuration configuration = Configuration.builder().options(Option.SUPPRESS_EXCEPTIONS).build();
           JsonPath.parse(SIMPLE_MAP, configuration).read("$.not-found");
           */
-      String l2_prefix_for_joburl = schema.getL2_prefix_for_joburl();
-      if ( !l2_prefix_for_joburl.isEmpty() ) {
-          LOG.debug(url + " joburl prefix: " + l2_prefix_for_joburl);
+      String l2_template_for_joburl = schema.getL2_template_for_joburl();
+      if ( !l2_template_for_joburl.isEmpty() ) {
+          LOG.debug(url + " joburl prefix: " + l2_template_for_joburl);
       }
 
       for ( int i = 0; i < jobs.size(); i++ ) {
@@ -863,47 +973,33 @@ public class CompanyParser implements Parser {
           String pattern_prefix = schema.getL2_schema_for_jobs() + "[" + Integer.toString(i) + "]";
 
           String pattern_url = pattern_prefix + "." + schema.getL2_schema_for_joburl();
-          String pattern_title = pattern_prefix + "." + schema.getL2_job_title();
-          String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
-          String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
-
-
           String newurl = doc.read(pattern_url, String.class);
-          String title = doc.read(pattern_title, String.class);
-          String location = doc.read(pattern_location, String.class);
-          String date = doc.read(pattern_date, String.class);
-
-
-
-          String link = l2_prefix_for_joburl + newurl;
+          if ( newurl.isEmpty() ) {
+              continue;
+          }
+          String link = String.format(l2_template_for_joburl, newurl);
           LOG.debug(url + " contain link: " + link);
-
           String target = guess_URL(link, url, schema.getL1_url());
 
+          String pattern_title = pattern_prefix + "." + schema.getL2_job_title();
+          String title = doc.read(pattern_title, String.class);
           title.replaceAll("\\s+", " ");
               /* here need to strip off the invalid char for ibm site */
           title = SolrUtils.stripNonCharCodepoints(title);
 
+          String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
+          String location = doc.read(pattern_location, String.class);
           location = SolrUtils.stripNonCharCodepoints(location);
 
-          try {
-                  /* we need use facet.fields on job post date, which need specific date format
-                   * And different company might use different format, need to unify them.
-                   * Fortunately there is already common function in DateUtil, hope can cope with all.
-                   * If not, we might extend the schema to add our own format.
-                   */
-              Date d = DateUtil.parseDate(date);
-              date = DateUtil.getThreadLocalDateFormat().format(d);
-          } catch (java.text.ParseException pe) {
-                   /* Stupid, Alibaba use GMT ms after 1970.01.01 */
-              try {
-                  long ms = Long.parseLong(date);
-                  Date d = new Date(ms);
-                  date = DateUtil.getThreadLocalDateFormat().format(d);
-              } catch ( java.lang.NumberFormatException npe ) {
-                  LOG.warn(schema.getName() + " invalid date format(need extend our schema): " + date);
-                  date = DateUtil.getThreadLocalDateFormat().format(new Date());
-              }
+          String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
+          String date = doc.read(pattern_date, String.class);
+          date = DateUtils.formatDate(date);
+
+          String newurl_repr = "";
+          if ( !schema.getL2_schema_for_joburl_repr().isEmpty() ) {
+              String pattern_url_repr = pattern_prefix + "." + schema.getL2_schema_for_joburl_repr();
+              newurl_repr = doc.read(pattern_url_repr, String.class);
+              newurl_repr = guess_URL(newurl_repr, url, schema.getL1_url());
           }
 
           WebPage  newPage = WebPage.newBuilder().build();
@@ -917,6 +1013,10 @@ public class CompanyParser implements Parser {
 
           newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
+          if ( !newurl_repr.isEmpty() ) {
+              newPage.setReprUrl(newurl_repr);
+              LOG.debug(url + " with repr url: " + newurl_repr);
+          }
           if ( try_to_shortcut_l3page ) {
                   /* Wait a moment, alibaba's JSON file contains the job detail already,
                   * which means We don't need fetch the 3rd level page which is generated via that.

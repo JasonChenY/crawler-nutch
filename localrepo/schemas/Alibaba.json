@@ -14,8 +14,8 @@
     }, 
     "job_list" : {
           "l2_schema_for_jobs" : "$.returnValue.datas",
-          "l2_prefix_for_joburl" : "http://job.alibaba.com/zhaopin/position_detail.htm?positionId=",
-	  "l2_schema_for_joburl" : "id",
+          "l2_template_for_joburl" : "http://job.alibaba.com/zhaopin/position_detail.htm?positionId=%s",
+          "l2_schema_for_joburl" : "id",
           "l2_job_title" : "name",
           "l2_job_location" : "workLocation",
           "l2_job_date" : "effectiveDate",

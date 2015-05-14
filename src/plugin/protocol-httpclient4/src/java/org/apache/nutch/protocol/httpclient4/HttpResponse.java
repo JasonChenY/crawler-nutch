@@ -173,9 +173,10 @@ public class HttpResponse implements Response {
         /* for site like microsoft */
         request.addHeader("Cookie", schema.getCookie());
     }
+    /* This can be considered later, it will cause confusion sometimes
     if (page.getModifiedTime() > 0) {
        request.addHeader("If-Modified-Since", HttpDateFormat.toString(page.getModifiedTime()));
-    }
+    }*/
 
     try {
       CloseableHttpResponse rsp = http.getClient().execute(request);

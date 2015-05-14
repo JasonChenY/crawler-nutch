@@ -37,6 +37,7 @@
 
   <dependencies>
     <dependency org="org.ccil.cowan.tagsoup" name="tagsoup" rev="1.2" conf="*->master"/>
+    <dependency org="com.jayway.jsonpath" name="json-path" rev="2.0.0" conf="*->default"/>
   </dependencies>
   
 </ivy-module>

@@ -1,0 +1,24 @@
+{ 
+    "company" : "Danone",
+    "l1_url" : "http://www.danone.com.cn/career-recruitment",
+    "page_list" : {
+          "l2_schema_for_nextpage_url" : "//DIV[@id='SE_pagebar']/A[2]/@href",
+          "l2_nextpage_pattern" : "page",
+          "l2_nextpage_increment" : "1",
+          "l2_last_page" : "//DIV[@id='SE_pagebar']/A[last()-3]/text()",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "//DIV[@id='SE_content']/UL/LI",
+          "l2_schema_for_joburl": "./DIV[@class='SE_titleinfo']/DIV[@class='SE_t1']/A[1]/@href",
+          "l2_schema_for_joburl_repr": "./DIV[@class='SE_titlebutton']/A[1]/@href",
+          "l2_job_title": "./DIV[@class='SE_titleinfo']/DIV[@class='SE_t1']/A/text()",
+          "l2_job_location": "substring-after(./DIV[@class='SE_titleinfo']/DIV[@class='SE_t2']/text(), ' China  ')",
+    },
+    "job": {
+          "l3_job_title":"//main:DIV[@class='page']/main:P[4]/text()",
+          "l3_job_date":"substring(//main:DIV[@class='page']/main:P[13]/text(),'14','10')",
+          "l3_job_date_format": "MM-dd-yyyy",
+          "l3_job_description":"//main:DIV[@class='page']/main:P[13]/following::*[string-length(normalize-space(text()))>0]",
+    }
+}
+
