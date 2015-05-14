@@ -121,7 +121,7 @@ public class CompanySchemaRepository {
               companySchema.setL2_schema_for_nextpage_url((String) page_list.get("l2_schema_for_nextpage_url"));
               companySchema.setL2_nextpage_method((String) page_list.get("l2_nextpage_method"));
               companySchema.setL2_template_for_nextpage_postdata((String) page_list.get("l2_template_for_nextpage_postdata"));
-              companySchema.setL2_nextpage_pattern((String) page_list.get("l2_nextpage_pattern"));
+              companySchema.setL2_nextpage_regex((String) page_list.get("l2_nextpage_regex"));
               companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
               companySchema.setL2_last_page((String) page_list.get("l2_last_page"));
 
@@ -133,6 +133,7 @@ public class CompanySchemaRepository {
           if ( job_list != null ) {
               companySchema.setL2_schema_for_jobs((String) job_list.get("l2_schema_for_jobs"));
               companySchema.setL2_template_for_joburl((String) job_list.get("l2_template_for_joburl"));
+              companySchema.setL2_joburl_regex((String) job_list.get("l2_joburl_regex"));
               companySchema.setL2_schema_for_joburl((String) job_list.get("l2_schema_for_joburl"));
               companySchema.setL2_schema_for_joburl_repr((String) job_list.get("l2_schema_for_joburl_repr"));
               companySchema.setL2_job_title((String) job_list.get("l2_job_title"));

@@ -4,7 +4,7 @@
     "l1_method" : "GET",
     "page_list" : {
           "l2_schema_for_nextpage_url" : "//main:DIV[@class='pagenav']/main:A[3]/@href",
-          "l2_nextpage_pattern" : "start",
+          "l2_nextpage_regex" : "/(.*start=)(\\d+)(.*)/",
           "l2_nextpage_increment" : "10",
           "l2_last_page" : "//main:DIV[@class='pagenav']/main:A[last()-1]/text()",
     }, 

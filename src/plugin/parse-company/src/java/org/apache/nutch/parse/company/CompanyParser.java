@@ -114,6 +114,8 @@ import org.apache.oro.text.regex.PatternMatcher;
 import org.apache.oro.text.regex.PatternMatcherInput;
 import org.apache.oro.text.regex.Perl5Compiler;
 import org.apache.oro.text.regex.Perl5Matcher;
+import org.apache.oro.text.perl.MalformedPerl5PatternException;
+import org.apache.oro.text.perl.Perl5Util;
 
 /* stuff for replacing postdata */
 import org.apache.http.NameValuePair;
@@ -404,7 +406,7 @@ public class CompanyParser implements Parser {
           print(doc, "");
           */
 
-	      /* Create xpath */
+          /* Create xpath */
           XPathFactory xpathFactory = XPathFactory.newInstance();
           XPath xpath = xpathFactory.newXPath();
 
@@ -440,10 +442,10 @@ public class CompanyParser implements Parser {
                 parse = getParse_summary_html(url, page, schema, doc, xpath);
             }
         } catch (SAXException e) {
-	      LOG.warn("Failed to parse " + url + " with DOMParser " + e.getMessage());
+          LOG.warn("Failed to parse " + url + " with DOMParser " + e.getMessage());
         }       
       } else if ( content_type.toLowerCase().contains("json") ) {
-	      /* Create JsonReader Context, from that to parse */
+          /* Create JsonReader Context, from that to parse */
           com.jayway.jsonpath.Configuration JSON_SMART_CONFIGURATION = com.jayway.jsonpath.Configuration.defaultConfiguration();
           DocumentContext doc = JsonPath.parse(input.getByteStream(), JSON_SMART_CONFIGURATION);
           if ( CompanyUtils.isEntryLink(page)) {
@@ -558,6 +560,16 @@ public class CompanyParser implements Parser {
           /* For Microsoft, we should take care at least two params: __VIEWSTATE, __EVENTVALIDATION */
           List<NameValuePair> substitue_params = new ArrayList<NameValuePair>();
           try {
+              PatternMatcherInput input = new PatternMatcherInput(origcontent);
+              Perl5Util plUtil = new Perl5Util();
+              while (plUtil.match(regex, input)) {
+                  MatchResult result = plUtil.getMatch();
+                  String key = result.group(1);
+                  String value = result.group(2);
+                  LOG.debug("Matcher found: " + key + " --> ");
+                  substitue_params.add(new BasicNameValuePair(key, value));
+              }
+              /*
               final PatternCompiler cp = new Perl5Compiler();
               final org.apache.oro.text.regex.Pattern pattern = cp.compile(regex, Perl5Compiler.CASE_INSENSITIVE_MASK | Perl5Compiler.READ_ONLY_MASK | Perl5Compiler.MULTILINE_MASK);
               final PatternMatcher matcher = new Perl5Matcher();
@@ -574,30 +586,30 @@ public class CompanyParser implements Parser {
                   LOG.debug("Matcher found: " + key + " --> ");
                   substitue_params.add(new BasicNameValuePair(key, value));
               }
+              */
           } catch (Exception ex) {
               LOG.warn(url + " failed to get matcher" + ex.getMessage());
           }
 
           LOG.debug(url + " get " + substitue_params.size() + " matcher via regex " + regex);
 
-                    /* JDK pattern/match not powerful enough
-                    Pattern pattern = null;
-                    try {
-                        pattern = Pattern.compile(regex);
-                        //pattern = Pattern.compile("\\d+\\|hiddenField\\|(__EVENTVALIDATION)\\|(.*)\\|\\d+\\|.*");
-                    } catch (PatternSyntaxException e) {
-                        System.out.println("Failed to compile nextpage postdata pattern: " + regex + " : " + e);
-                        return ;
-                    }
+          /* JDK pattern/match version
+          Pattern pattern = null;
+          try {
+              pattern = Pattern.compile(regex);
+              //pattern = Pattern.compile("\\d+\\|hiddenField\\|(__EVENTVALIDATION)\\|(.*)\\|\\d+\\|.*");
+          } catch (PatternSyntaxException e) {
+              System.out.println("Failed to compile nextpage postdata pattern: " + regex + " : " + e);
+              return ;
+          }
 
-                    Matcher matcher = pattern.matcher(origcontent);
-                    if ( matcher.find() ) {
-                        key = matcher.group(1);
-                        value = matcher.group(2);
-
-                        System.out.println("Matcher found: " + key + " " + value);
-                    }
-                    */
+          Matcher matcher = pattern.matcher(origcontent);
+          if ( matcher.find() ) {
+              key = matcher.group(1);
+              value = matcher.group(2);
+              System.out.println("Matcher found: " + key + " " + value);
+          }
+          */
           String newpostdata = schema.getL2_template_for_nextpage_postdata();
 
           for ( int i=0; i < substitue_params.size(); i++ ) {
@@ -680,23 +692,17 @@ public class CompanyParser implements Parser {
       }
   }
   private Parse generate_next_pages(String key, CompanySchema schema, String page_list_url, int last) {
-      /* Page number Pattern */
-      String patternValue = schema.getL2_nextpage_pattern();
-      patternValue = "(" + patternValue + "=)(\\d*)";
-      Pattern pattern = null;
-      try {
-          pattern = Pattern.compile(patternValue);
-      } catch (PatternSyntaxException e) {
-          LOG.error(key + " Failed to compile nextpage pattern: " + patternValue + " : " + e);
-          return null;
-      }
+      Perl5Util plUtil = new Perl5Util();
+
+      /* Page number regex */
+      String regex = schema.getL2_nextpage_regex();
 
       /* Page Interval */
       int incr = 0;
       try {
           incr = Integer.parseInt(schema.getL2_nextpage_increment());
       } catch (NumberFormatException e) {
-          LOG.error(key + " failed to parse nextpage increment");
+          LOG.error(key + " failed to parse nextpage increment", e);
           return null;
       }
 
@@ -704,67 +710,84 @@ public class CompanyParser implements Parser {
       status.setMajorCode((int) ParseStatusCodes.SUCCESS);
       Parse parse = new Parse("page list", "page list", new Outlink[0], status);
 
-      if ( schema.getL2_template_for_nextpage_url().isEmpty() )  {
+      try {
+          if (schema.getL2_template_for_nextpage_url().isEmpty()) {
           /* normal case where next page is a href, can generate list of new urls basing on pattern */
-          Matcher matcher = pattern.matcher(page_list_url);
-          if ( matcher.find() ) {
-              int start = Integer.parseInt(matcher.group(2));
-              String prefix = matcher.group(1);
-              for (int i = start; i <= last; i += incr ) {
-                  String subsitute = prefix + Integer.toString(i);
-                  String newurl = matcher.replaceAll(subsitute);
+              PatternMatcherInput matcherInput = new PatternMatcherInput(page_list_url);
+              if (plUtil.match(regex, matcherInput)) {
+              /* till now we will only have one matcher for url parameters, so use if instead of while-loop */
+                  MatchResult result = plUtil.getMatch();
+              /* In general we should define 3 group for regex, can be 2 if the patter is in end */
 
-                  WebPage  newPage = WebPage.newBuilder().build();
-                  newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                  CompanyUtils.setCompanyName(newPage, schema.getName());
-                  CompanyUtils.setListLink(newPage);
-                  newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+                  String prefix = result.group(1);
+
+                  int start = Integer.parseInt(result.group(2));
+
+                  String suffix = "";
+                  if (result.groups() == 3) suffix = result.group(3);
+
+                  for (int i = start; i <= last; i += incr) {
+                      String newurl = prefix + Integer.toString(i) + suffix;
+
+                      WebPage newPage = WebPage.newBuilder().build();
+                      newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                      CompanyUtils.setCompanyName(newPage, schema.getName());
+                      CompanyUtils.setListLink(newPage);
+                      newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
                   /* dont need to add post data here, we won't handle it,
                    * if there is any strange site do this way, will add it
                    **/
-                  parse.addPage(newurl, newPage);
-                  if ( runtime_debug ) break;
+                      parse.addPage(newurl, newPage);
+                      if (runtime_debug) break;
+                  }
+              } else {
+                  LOG.error(key + " failed to find nextpage url via regex " + regex);
               }
           } else {
-              LOG.error(key + " failed to find nextpage pattern");
-          }
-      } else {
           /* normally this should be using method POST with some dynamic data, we should do pattern match/replace inside dynamic data */
-          String l2_postdata = schema.getL2_template_for_nextpage_postdata();
-          if ( l2_postdata.isEmpty() ) {
-              LOG.warn(key + " Dont know how to generate new pages without dynamic post data in schema");
-              return parse;
-          }
-          Matcher matcher = pattern.matcher(l2_postdata);
-          if ( matcher.find() ) {
-              int start = Integer.parseInt(matcher.group(2));
-              String prefix = matcher.group(1);
-              for (int i = start; i <= last; i += incr ) {
-                  String subsitute = prefix + Integer.toString(i);
-                  String newpostdata = matcher.replaceAll(subsitute);
+              String l2_postdata = schema.getL2_template_for_nextpage_postdata();
+              if (l2_postdata.isEmpty()) {
+                  LOG.warn(key + " Dont know how to generate new pages without dynamic post data in schema");
+                  return parse;
+              }
+
+              PatternMatcherInput matcherInput = new PatternMatcherInput(l2_postdata);
+              if (plUtil.match(regex, matcherInput)) {
+                  MatchResult result = plUtil.getMatch();
+                  String prefix = result.group(1);
+                  int start = Integer.parseInt(result.group(2));
+                  String suffix = "";
+                  if (result.groups() == 3) suffix = result.group(3);
+
+                  for (int i = start; i <= last; i += incr) {
+                      String newpostdata = prefix + Integer.toString(i) + suffix;
                   /* hbase use url as the key, but we will generate series of webpage with same key value,
                    * adding a trailing stuff, and remember to remove it in fetcher/protolcol-http4,
                    * This suffix should survive url normalizer and url filter.
                    * Should not be a problem for indexing, becausee l2 page won't be indexed.
                    * Any problem for other Job?
                    **/
-                  String newurl = page_list_url + "::" + Integer.toString(i);
+                      String newurl = page_list_url + "::" + Integer.toString(i);
 
-                  WebPage newPage = WebPage.newBuilder().build();
-                  newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                  CompanyUtils.setCompanyName(newPage, schema.getName());
-                  CompanyUtils.setListLink(newPage);
-                  newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+                      WebPage newPage = WebPage.newBuilder().build();
+                      newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                      CompanyUtils.setCompanyName(newPage, schema.getName());
+                      CompanyUtils.setListLink(newPage);
+                      newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
-                  newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
+                      newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
 
-                  parse.addPage(newurl, newPage);
-                  if ( runtime_debug ) break;
+                      parse.addPage(newurl, newPage);
+                      if (runtime_debug) break;
+                  }
+              } else {
+                  LOG.error(key + " failed to find nextpage pattern from postdata");
               }
-          } else {
-              LOG.error(key + " failed to find nextpage pattern from postdata");
           }
+      } catch ( MalformedPerl5PatternException pe ) {
+          LOG.error(key + " failed of nextpage regex " + regex, pe);
+          return null;
       }
       return parse;
   }
@@ -783,13 +806,36 @@ public class CompanyParser implements Parser {
               status.setMajorCode((int) ParseStatusCodes.SUCCESS);
               parse = new Parse("job list", "job list", new Outlink[0], status);
           }
+
+          String prefix="";
+          String suffix="";
+          if ( !schema.getL2_template_for_joburl().isEmpty() ) {
+              /* till now didn't see this case yet, just port Alibaba Json case to HTML */
+              String l2_template_for_joburl = schema.getL2_template_for_joburl();
+              LOG.warn(url + " (Abnormal case? ) joburl tempate: " + l2_template_for_joburl);
+
+              String regex = schema.getL2_joburl_regex();
+              if ( regex.isEmpty() ) {
+                  LOG.warn(url + " template defined without regex: " + l2_template_for_joburl);
+              } else {
+                  try {
+                      Perl5Util plUtil = new Perl5Util();
+                      PatternMatcherInput matcherInput = new PatternMatcherInput(l2_template_for_joburl);
+                      if (plUtil.match(regex, matcherInput)) {
+                          MatchResult result = plUtil.getMatch();
+                          prefix = result.group(1);
+                          if (result.groups() == 3) suffix = result.group(3);
+                      } else {
+                          LOG.warn(url + " failed to match with regex " + regex);
+                      }
+                  } catch (MalformedPerl5PatternException pe) {
+                      LOG.warn(url + " failed to compile regex " + regex, pe);
+                  }
+              }
+          }
+
           for ( int i = 0; i < jobs.getLength(); i++ ) {
               Element job = (Element)jobs.item(i);
-
-              String l2_template_for_joburl = schema.getL2_template_for_joburl();
-              if ( !l2_template_for_joburl.isEmpty() ) {
-                  LOG.debug(url + " (Abnormal case? ) joburl tempate: " + l2_template_for_joburl);
-              }
 
               expr = xpath.compile(schema.getL2_schema_for_joburl());
               String link = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
@@ -797,9 +843,9 @@ public class CompanyParser implements Parser {
                   continue;
                   /* Danone case, the last page will have 7 job items, but some of them are empty */
               }
-              if ( !l2_template_for_joburl.isEmpty() ) {
-                  link = String.format(l2_template_for_joburl, link);
-              }
+
+              link = prefix + link + suffix;
+
               LOG.debug(url + " contain link: " + link);
               String target = guess_URL(link, url, schema.getL1_url());
 
@@ -958,14 +1004,34 @@ public class CompanyParser implements Parser {
           Configuration configuration = Configuration.builder().options(Option.SUPPRESS_EXCEPTIONS).build();
           JsonPath.parse(SIMPLE_MAP, configuration).read("$.not-found");
           */
+      String prefix="";
+      String suffix="";
+
       String l2_template_for_joburl = schema.getL2_template_for_joburl();
       if ( !l2_template_for_joburl.isEmpty() ) {
-          LOG.debug(url + " joburl prefix: " + l2_template_for_joburl);
+          LOG.debug(url + " l2_template_for_joburl: " + l2_template_for_joburl);
+
+          String regex = schema.getL2_joburl_regex();
+          try {
+              Perl5Util plUtil = new Perl5Util();
+              PatternMatcherInput matcherInput = new PatternMatcherInput(l2_template_for_joburl);
+              if ( plUtil.match(regex, matcherInput)) {
+                  MatchResult result = plUtil.getMatch();
+                  prefix = result.group(1);
+                  if (result.groups() == 3) suffix = result.group(3);
+              } else {
+                  LOG.warn(url + " failed to match with regex " + regex);
+              }
+          } catch ( MalformedPerl5PatternException pe ) {
+              LOG.warn(url + " failed to compile regex " + regex);
+          }
+      } else {
+          /* no such case */
       }
 
       for ( int i = 0; i < jobs.size(); i++ ) {
               /*
-               * Dont use this old way, it will always try to case to some type, which we not know in code
+               * Dont use this old way, it will always try to cast to some type, which we not know in code
                * Object job = jobs.get(i);
                *
                * String link = JsonPath.read(job, schema.getL2_schema_for_joburl());
@@ -977,7 +1043,13 @@ public class CompanyParser implements Parser {
           if ( newurl.isEmpty() ) {
               continue;
           }
-          String link = String.format(l2_template_for_joburl, newurl);
+
+          /*Dont use format even though it is convenient,
+          * because not sure any site carry invalid url for format,
+          * aiming for a consistent regex handling as l2 pageurl/postdata
+          * String link = String.format(l2_template_for_joburl, newurl);
+          */
+          String link = prefix + newurl + suffix;
           LOG.debug(url + " contain link: " + link);
           String target = guess_URL(link, url, schema.getL1_url());
 

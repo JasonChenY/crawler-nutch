@@ -7,13 +7,14 @@
 	      "l2_template_for_nextpage_url" : "http://job.alibaba.com/zhaopin/socialPositionList/doList.json",
           "l2_nextpage_method" : "POST",
 	      "l2_template_for_nextpage_postdata" : "pageSize=10&pageIndex=1"
-          "l2_nextpage_pattern" : "pageIndex",
+          "l2_nextpage_regex" : "/(.*pageIndex=)(\\d+)(.*)/",
           "l2_nextpage_increment" : "1",
           "l2_last_page" : "$.returnValue.totalPage",
     }, 
     "job_list" : {
           "l2_schema_for_jobs" : "$.returnValue.datas",
-          "l2_template_for_joburl" : "http://job.alibaba.com/zhaopin/position_detail.htm?positionId=%s",
+          "l2_template_for_joburl" : "http://job.alibaba.com/zhaopin/position_detail.htm?positionId=123456",
+          "l2_joburl_regex" : "/(.*positionId=)(\\d+)(.*)/",
           "l2_schema_for_joburl" : "id",
           "l2_job_title" : "name",
           "l2_job_location" : "workLocation",

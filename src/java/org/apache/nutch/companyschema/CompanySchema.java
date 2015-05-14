@@ -29,7 +29,7 @@ public class CompanySchema {
     private String l2_schema_for_nextpage_url;
     private String l2_nextpage_method;
     private String l2_template_for_nextpage_postdata;
-    private String l2_nextpage_pattern;
+    private String l2_nextpage_regex;
     private String l2_nextpage_increment;
     private String l2_last_page;
 
@@ -39,6 +39,7 @@ public class CompanySchema {
 
     private String l2_schema_for_jobs;
     private String l2_template_for_joburl;
+    private String l2_joburl_regex;
     private String l2_schema_for_joburl;
     private String l2_schema_for_joburl_repr; /* For Danone, one url for fetch pdf, another(repr) for apply */
     private String l2_job_title;
@@ -65,7 +66,7 @@ public class CompanySchema {
         setL2_schema_for_nextpage_url("");
         setL2_nextpage_method("GET");
         setL2_template_for_nextpage_postdata("");
-        setL2_nextpage_pattern("");
+        setL2_nextpage_regex("");
         setL2_nextpage_increment("1");
         setL2_last_page("");
 
@@ -74,6 +75,7 @@ public class CompanySchema {
 
         setL2_schema_for_jobs("");
         setL2_template_for_joburl("");
+        setL2_joburl_regex("");
         setL2_schema_for_joburl("");
         setL2_schema_for_joburl_repr("");
         setL2_job_title("");
@@ -171,12 +173,12 @@ public class CompanySchema {
         if (l2_template_for_nextpage_postdata != null) this.l2_template_for_nextpage_postdata = l2_template_for_nextpage_postdata;
     }
 
-    public String getL2_nextpage_pattern() {
-        return l2_nextpage_pattern;
+    public String getL2_nextpage_regex() {
+        return l2_nextpage_regex;
     }
 
-    public void setL2_nextpage_pattern(String l2_nextpage_pattern) {
-        if (l2_nextpage_pattern != null) this.l2_nextpage_pattern = l2_nextpage_pattern;
+    public void setL2_nextpage_regex(String l2_nextpage_regex) {
+        if (l2_nextpage_regex != null) this.l2_nextpage_regex = l2_nextpage_regex;
     }
 
     public String getL2_nextpage_increment() {
@@ -225,6 +227,14 @@ public class CompanySchema {
 
     public void setL2_template_for_joburl(String l2_template_for_joburl) {
         if (l2_template_for_joburl != null) this.l2_template_for_joburl = l2_template_for_joburl;
+    }
+
+    public String getL2_joburl_regex() {
+        return l2_joburl_regex;
+    }
+
+    public void setL2_joburl_regex(String l2_joburl_regex) {
+        if (l2_joburl_regex != null) this.l2_joburl_regex = l2_joburl_regex;
     }
 
     public String getL2_schema_for_joburl() {
@@ -315,11 +325,11 @@ public class CompanySchema {
         System.out.println("l1_postdata : " + l1_postdata);
         System.out.println("  ");
         System.out.println("l2_content_type : " + l2_content_type);
-        System.out.println("l2_prefix_for_nextpage_url : " + l2_template_for_nextpage_url);
+        System.out.println("l2_template_for_nextpage_url : " + l2_template_for_nextpage_url);
         System.out.println("l2_schema_for_nextpage_url : " + l2_schema_for_nextpage_url);
         System.out.println("l2_nextpage_method : " + l2_nextpage_method);
         System.out.println("l2_template_for_nextpage_postdata : " + l2_template_for_nextpage_postdata);
-        System.out.println("l2_nextpage_pattern : " + l2_nextpage_pattern);
+        System.out.println("l2_nextpage_regex : " + l2_nextpage_regex);
         System.out.println("l2_nextpage_increment : " + l2_nextpage_increment);
         System.out.println("l2_last_page : " + l2_last_page);
         System.out.println("  ");
@@ -328,6 +338,7 @@ public class CompanySchema {
         System.out.println("  ");
         System.out.println("l2_schema_for_jobs : " + l2_schema_for_jobs);
         System.out.println("l2_template_for_joburl : " + l2_template_for_joburl);
+        System.out.println("l2_joburl_regex : " + l2_joburl_regex);
         System.out.println("l2_schema_for_joburl : " + l2_schema_for_joburl);
         System.out.println("l2_schema_for_joburl_repr : " + l2_schema_for_joburl_repr);
         System.out.println("l2_job_title : " + l2_job_title);

@@ -3,7 +3,7 @@
     "l1_url" : "http://www.danone.com.cn/career-recruitment",
     "page_list" : {
           "l2_schema_for_nextpage_url" : "//DIV[@id='SE_pagebar']/A[2]/@href",
-          "l2_nextpage_pattern" : "page",
+          "l2_nextpage_regex" : "/(.*page=)(\\d+)(.*)/",
           "l2_nextpage_increment" : "1",
           "l2_last_page" : "//DIV[@id='SE_pagebar']/A[last()-3]/text()",
     }, 
