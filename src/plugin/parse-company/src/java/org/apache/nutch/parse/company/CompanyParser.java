@@ -514,7 +514,7 @@ public class CompanyParser implements Parser {
           nextpage_url = (String) expr.evaluate(doc, XPathConstants.STRING);
           LOG.debug(url + " (Normal case) Got nextpage url: " + nextpage_url);
       } else {
-          LOG.debug(url + " (Abnormal case?) use l2_prefix_for_nextpage_url instead of l2_schema_for_nextpage_url");
+          LOG.debug(url + " (Abnormal case?) use l2_template_for_nextpage_url instead of l2_schema_for_nextpage_url");
       }
       nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
 
@@ -697,13 +697,15 @@ public class CompanyParser implements Parser {
       /* Page number regex */
       String regex = schema.getL2_nextpage_regex();
 
-      /* Page Interval */
-      int incr = 0;
-      try {
-          incr = Integer.parseInt(schema.getL2_nextpage_increment());
-      } catch (NumberFormatException e) {
-          LOG.error(key + " failed to parse nextpage increment", e);
-          return null;
+      /* Page Interval, by default 1 */
+      int incr = 1;
+      if ( !schema.getL2_nextpage_increment().isEmpty() ) {
+          try {
+              incr = Integer.parseInt(schema.getL2_nextpage_increment());
+          } catch (NumberFormatException e) {
+              LOG.error(key + " failed to parse nextpage increment", e);
+              return null;
+          }
       }
 
       ParseStatus status = ParseStatus.newBuilder().build();
@@ -745,7 +747,7 @@ public class CompanyParser implements Parser {
                   LOG.error(key + " failed to find nextpage url via regex " + regex);
               }
           } else {
-          /* normally this should be using method POST with some dynamic data, we should do pattern match/replace inside dynamic data */
+              /* normally this should be using method POST with some dynamic data, we should do pattern match/replace inside dynamic data */
               String l2_postdata = schema.getL2_template_for_nextpage_postdata();
               if (l2_postdata.isEmpty()) {
                   LOG.warn(key + " Dont know how to generate new pages without dynamic post data in schema");
@@ -878,7 +880,10 @@ public class CompanyParser implements Parser {
                   expr = xpath.compile(schema.getL2_job_date());
                   date = (String) expr.evaluate(job, XPathConstants.STRING);
                   date = DateUtils.formatDate(date, schema.getL2_job_date_format());
+              } else {
+                  date = DateUtils.getCurrentDate();
               }
+
               WebPage  newPage = WebPage.newBuilder().build();
               newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
               CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
@@ -940,6 +945,7 @@ public class CompanyParser implements Parser {
       for ( int i = 0; i < nodes.getLength(); i++ ) {
           Node node = nodes.item(i);
           l3_description += DOM2HTML.toString(node);
+          l3_description += "<BR/>";
       }
       l3_description = SolrUtils.stripNonCharCodepoints(l3_description);
 
@@ -1067,9 +1073,14 @@ public class CompanyParser implements Parser {
           String location = doc.read(pattern_location, String.class);
           location = SolrUtils.stripNonCharCodepoints(location);
 
-          String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
-          String date = doc.read(pattern_date, String.class);
-          date = DateUtils.formatDate(date, schema.getL2_job_date_format());
+          String date = "";
+          if ( !schema.getL2_job_date().isEmpty() ) {
+              String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
+              date = doc.read(pattern_date, String.class);
+              date = DateUtils.formatDate(date, schema.getL2_job_date_format());
+          } else {
+              date = DateUtils.getCurrentDate();
+          }
 
           String newurl_repr = "";
           if ( !schema.getL2_schema_for_joburl_repr().isEmpty() ) {

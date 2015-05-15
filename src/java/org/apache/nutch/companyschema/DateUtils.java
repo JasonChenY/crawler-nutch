@@ -332,7 +332,9 @@ public class DateUtils {
         }
         return formatDate(d);
     }
-
+    public static String getCurrentDate() {
+        return getThreadLocalDateFormat().format(new Date());
+    }
   public static void main(String args[]) {
     String    strs[] = {"m06a - a19b - c2014", "April a15b   year2014a", "April-a15b-year2014a", "d19a   m06b  y2014c"};
     String formats[] = {"MM-dd-yyyy", "MMM dd yyyy" , "MMM-dd-yyyy", "dd MM yyyy"};
