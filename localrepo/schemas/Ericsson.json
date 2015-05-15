@@ -1,0 +1,22 @@
+{ 
+    "company" : "Ericsson",
+    "l1_url" : "https://jobs.ericsson.com/search/?q=&locationsearch=CN",
+    "page_list" : {
+          "l2_schema_for_nextpage_url" : "//main:UL[@class='pagination-links']/main:LI[3]/main:A/@href",
+          "l2_nextpage_regex" : "/(.*startrow=)(\\d+)/",
+          "l2_nextpage_increment" : "25",
+          "l2_last_page" : "//main:SPAN[@class='pagination-label-row']/main:SPAN[@class='paginationLabel']/main:B[2]/text()",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "//main:TABLE[@id='searchresults']/main:TBODY/main:TR[@class='data-row clickable']",
+          "l2_schema_for_joburl": "./main:TD[@headers='hdrTitle']/main:SPAN/main:A/@href",
+          "l2_job_title": "./main:TD[@headers='hdrTitle']/main:SPAN/main:A/text()",
+          "l2_job_location": "substring-before(./main:TD[@headers='hdrLocation']/main:SPAN/text(),',')",
+          "l2_job_date": "./main:TD[@headers='hdrDate']/main:SPAN/text()",
+          "l2_job_date_format": "MMM dd yyyy",
+    },
+    "job": {
+          "l3_job_description":"//main:DIV[@class='joqReqDescription']",
+    }
+}
+
