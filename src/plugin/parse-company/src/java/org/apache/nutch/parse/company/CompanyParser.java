@@ -724,7 +724,7 @@ public class CompanyParser implements Parser {
                   int start = Integer.parseInt(result.group(2));
 
                   String suffix = "";
-                  if (result.groups() == 3) suffix = result.group(3);
+                  if (result.groups() > 3) suffix = result.group(3);
 
                   for (int i = start; i <= last; i += incr) {
                       String newurl = prefix + Integer.toString(i) + suffix;
@@ -758,10 +758,17 @@ public class CompanyParser implements Parser {
                   String prefix = result.group(1);
                   int start = Integer.parseInt(result.group(2));
                   String suffix = "";
-                  if (result.groups() == 3) suffix = result.group(3);
+                  if (result.groups() > 3) suffix = result.group(3);
+
 
                   for (int i = start; i <= last; i += incr) {
                       String newpostdata = prefix + Integer.toString(i) + suffix;
+                      if (result.groups() > 4) {
+                          /* A simple workaround here for Nokia case, need consider to extend the template to
+                           * indicate how is each matched field to be replaced.
+                           */
+                          newpostdata += Integer.toString(i);
+                      }
                   /* hbase use url as the key, but we will generate series of webpage with same key value,
                    * adding a trailing stuff, and remember to remove it in fetcher/protolcol-http4,
                    * This suffix should survive url normalizer and url filter.
@@ -824,7 +831,7 @@ public class CompanyParser implements Parser {
                       if (plUtil.match(regex, matcherInput)) {
                           MatchResult result = plUtil.getMatch();
                           prefix = result.group(1);
-                          if (result.groups() == 3) suffix = result.group(3);
+                          if (result.groups() > 3) suffix = result.group(3);
                       } else {
                           LOG.warn(url + " failed to match with regex " + regex);
                       }
@@ -1018,7 +1025,7 @@ public class CompanyParser implements Parser {
               if ( plUtil.match(regex, matcherInput)) {
                   MatchResult result = plUtil.getMatch();
                   prefix = result.group(1);
-                  if (result.groups() == 3) suffix = result.group(3);
+                  if (result.groups() > 3) suffix = result.group(3);
               } else {
                   LOG.warn(url + " failed to match with regex " + regex);
               }
