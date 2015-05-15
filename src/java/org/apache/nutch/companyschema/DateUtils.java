@@ -31,6 +31,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.apache.oro.text.perl.MalformedPerl5PatternException;
+import org.apache.oro.text.perl.Perl5Util;
 
 /** Borrowed from solr
  * This class has some code from HttpClient DateUtil.
@@ -263,7 +265,7 @@ public class DateUtils {
   }
 
     public static final Logger LOG = LoggerFactory
-            .getLogger("org.apache.nutch.companyschema.CompanyUtils");
+            .getLogger("org.apache.nutch.parse.company");
 
     private static List<NameValuePair> months = initialize_months();
     private static List<NameValuePair> initialize_months() {
@@ -288,9 +290,7 @@ public class DateUtils {
         return months;
     }
 
-    public static String formatDate(String str) {
-        str.trim();
-        str = str.replaceAll("\\s+", " ");
+    private static String formatDate(String str) {
         /* Microsoft use some chinese word */
         for ( int i = 0; i < months.size(); i++ ) {
             str = str.replaceAll(months.get(i).getName(), months.get(i).getValue());
@@ -314,19 +314,34 @@ public class DateUtils {
     }
 
     public static String formatDate(String d, String format) {
-        if ( format.equals("MM-dd-yyyy") ) {
-            d = d.replaceAll("-", "/");
+        if ( format != null && !format.isEmpty() ){
+            try {
+                Perl5Util plutil = new Perl5Util();
+                if ( format.equals("MM-dd-yyyy") ) {
+                    d = plutil.substitute("s/\\D*(\\d{1,})[^-]*-\\D*(\\d{1,})[^-]*-\\D*(\\d{4})/$3-$1-$2/g", d);
+                } else if ( format.equals("MMM dd yyyy") ) {
+                    d = plutil.substitute("s/([a-zA-Z]{3})\\S*\\s+\\D*(\\d{1,})\\D+(\\d{4})/$2 $1 $3/g", d);
+                } else if ( format.equals("MMM-dd-yyyy") ) {
+                    d = plutil.substitute("s/\\s*([a-zA-Z]{3})[^-]*-\\D*(\\d{1,})[^-]*-\\D*(\\d{4})/$2-$1-$3/g", d);
+                } else if ( format.equals("dd MM yyyy") ) {
+                    d = plutil.substitute("s/\\D*(\\d{1,})\\S*\\s\\D*(\\d{1,})\\S*\\s\\D*(\\d{4})/$3-$2-$1/g", d);
+                }
+            } catch (MalformedPerl5PatternException me ) {
+                LOG.warn("datestring " + d + " cant be matched with " + format);
+            }
         }
         return formatDate(d);
     }
 
   public static void main(String args[]) {
-    String str = "06-19-2014";
-    System.out.println(str);
+    String    strs[] = {"m06a - a19b - c2014", "April a15b   year2014a", "April-a15b-year2014a", "d19a   m06b  y2014c"};
+    String formats[] = {"MM-dd-yyyy", "MMM dd yyyy" , "MMM-dd-yyyy", "dd MM yyyy"};
     try {
-        str = formatDate(str, "MM-dd-yyyy");
-        System.out.println(str);
-        Date d = new Date();
+        for ( int i = 0; i < strs.length; i++ ) {
+            String str = strs[i];
+            str = formatDate(str, formats[i]);
+            System.out.println(strs[i] + " ---> " + str);
+        }
     } catch ( Exception e ) {
         e.printStackTrace();
     }

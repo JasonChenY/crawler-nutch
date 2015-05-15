@@ -45,6 +45,8 @@ public class CompanySchema {
     private String l2_job_title;
     private String l2_job_location;
     private String l2_job_date;
+    /* field for Ericsson */
+    private String l2_job_date_format;
     /* field for Alibaba */
     private String l2_job_description;
 
@@ -55,7 +57,7 @@ public class CompanySchema {
     private String l3_job_description;
 
     public CompanySchema(String n) {
-	    setName(n);
+        setName(n);
         setCookie("");
         setL1_url("");
         setL1_method("GET");
@@ -81,6 +83,7 @@ public class CompanySchema {
         setL2_job_title("");
         setL2_job_location("");
         setL2_job_date("");
+        setL2_job_date_format("");
         setL2_job_description("");
 
         setL3_job_title("");
@@ -277,6 +280,14 @@ public class CompanySchema {
         if (l2_job_date != null) this.l2_job_date = l2_job_date;
     }
 
+    public String getL2_job_date_format() {
+        return l2_job_date_format;
+    }
+
+    public void setL2_job_date_format(String l2_job_date_format) {
+        if (l2_job_date_format != null) this.l2_job_date_format = l2_job_date_format;
+    }
+
     public String getL2_job_description() {
         return l2_job_description;
     }
@@ -344,6 +355,7 @@ public class CompanySchema {
         System.out.println("l2_job_title : " + l2_job_title);
         System.out.println("l2_job_location : " + l2_job_location);
         System.out.println("l2_job_date : " + l2_job_date);
+        System.out.println("l2_job_date_format : " + l2_job_date_format);
         System.out.println("l2_job_description : " + l2_job_description);
         System.out.println("  ");
         System.out.println("l3_job_title: " + l3_job_title);

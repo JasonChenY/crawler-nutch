@@ -877,7 +877,7 @@ public class CompanyParser implements Parser {
               if ( !schema.getL2_job_date().isEmpty() ) {
                   expr = xpath.compile(schema.getL2_job_date());
                   date = (String) expr.evaluate(job, XPathConstants.STRING);
-                  date = DateUtils.formatDate(date);
+                  date = DateUtils.formatDate(date, schema.getL2_job_date_format());
               }
               WebPage  newPage = WebPage.newBuilder().build();
               newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
@@ -929,10 +929,7 @@ public class CompanyParser implements Parser {
           expr = xpath.compile(schema.getL3_job_date());
           l3_date = (String) expr.evaluate(doc, XPathConstants.STRING);
           LOG.info(url + " Date: " + l3_date);
-          if ( schema.getL3_job_date_format().isEmpty() )
-              l3_date = DateUtils.formatDate(l3_date);
-          else
-              l3_date = DateUtils.formatDate(l3_date, schema.getL3_job_date_format());
+          l3_date = DateUtils.formatDate(l3_date, schema.getL3_job_date_format());
           /* Normally job date should be extracted from L2 page, but if configured which means use this */
           page.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(l3_date.getBytes()));
       }
@@ -1072,7 +1069,7 @@ public class CompanyParser implements Parser {
 
           String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
           String date = doc.read(pattern_date, String.class);
-          date = DateUtils.formatDate(date);
+          date = DateUtils.formatDate(date, schema.getL2_job_date_format());
 
           String newurl_repr = "";
           if ( !schema.getL2_schema_for_joburl_repr().isEmpty() ) {
