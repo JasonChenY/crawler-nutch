@@ -15,12 +15,12 @@
           "l2_job_title" : "jobname",
           "l2_job_location" : "jobArea",
           "l2_job_date" : "creationDate",
-          "l2_job_date_format" : "yyyy-MM-dd",
           "l2_job_family" : "jobFamilyName",
     },
     "job" : {
           "l3_job_description" : "$.['mainBusiness','jobRequire']"
     }
+    "job_date_format" : "yyyy-MM-dd",
     "job_location_format_regex" : "s/(.*-)*\\s*([^-]+)(\\s*-\\s*)?$/$2/g",
 }
 

@@ -1,0 +1,9 @@
+https://jobs3.netmedia1.com/cp/faces/job_search	ibm
+http://hr.tencent.com/position.php	tencent
+http://job.alibaba.com/zhaopin/socialPositionList/doList.json	Alibaba
+https://careers.microsoft.com/search.aspx	Microsoft
+http://www.danone.com.cn/career-recruitment	Danone	
+http://careers.peopleclick.eu.com/careerscp/client_nokiasolutionsandnetworks/external/search.do	Nokia
+https://jobs.ericsson.com/search/?q=&locationsearch=CN	Ericsson
+http://www.lenovocareers.com/zh-cn/search-results?countryid=46&cntry=china&city=-1&category=-1&keywords=&datePosted=7&zipCode=&radius=50	Lenovo
+http://career.huawei.com/recruitment/services/portal/portalpub/getJob/page/10/1?orderBy=ISS_STARTDATE_DESC&countryName=China&jobType=1&_=1431727503633	Huawei

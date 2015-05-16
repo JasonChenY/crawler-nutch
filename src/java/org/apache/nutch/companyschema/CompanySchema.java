@@ -46,18 +46,17 @@ public class CompanySchema {
     private String l2_job_title;
     private String l2_job_location;
     private String l2_job_date;
-    /* field for Ericsson */
-    private String l2_job_date_format;
     /* field for Alibaba */
     private String l2_job_description;
 
     private String l3_job_title;
     /* field for Danone, job post date in l3 pdf file */
     private String l3_job_date;
-    private String l3_job_date_format;
     private String l3_job_description;
 
-    /* mainly for Huawei's  country-province-city format */
+    /* field for dateformat, this will be applied to either l2(Ericsson) or l3(Danone)*/
+    private String job_date_format;
+    /* mainly for Huawei's  country-province-city or country-city- format */
     private String job_location_format_regex;
 
     public CompanySchema(String n) {
@@ -88,14 +87,13 @@ public class CompanySchema {
         setL2_job_title("");
         setL2_job_location("");
         setL2_job_date("");
-        setL2_job_date_format("");
         setL2_job_description("");
 
         setL3_job_title("");
         setL3_job_date("");
-        setL3_job_date_format("");
         setL3_job_description("");
 
+        setJob_date_format("");
         setJob_location_format_regex("");
     }
 
@@ -295,14 +293,6 @@ public class CompanySchema {
         if (l2_job_date != null) this.l2_job_date = l2_job_date;
     }
 
-    public String getL2_job_date_format() {
-        return l2_job_date_format;
-    }
-
-    public void setL2_job_date_format(String l2_job_date_format) {
-        if (l2_job_date_format != null) this.l2_job_date_format = l2_job_date_format;
-    }
-
     public String getL2_job_description() {
         return l2_job_description;
     }
@@ -327,20 +317,20 @@ public class CompanySchema {
         if (l3_job_date != null) this.l3_job_date = l3_job_date;
     }
 
-    public String getL3_job_date_format() {
-        return l3_job_date_format;
-    }
-
-    public void setL3_job_date_format(String l3_job_date_format) {
-        if (l3_job_date_format != null) this.l3_job_date_format = l3_job_date_format;
-    }
-
     public String getL3_job_description() {
         return l3_job_description;
     }
 
     public void setL3_job_description(String l3_job_description) {
         if (l3_job_description != null) this.l3_job_description = l3_job_description;
+    }
+
+    public String getJob_date_format() {
+        return job_date_format;
+    }
+
+    public void setJob_date_format(String job_date_format) {
+        if (job_date_format != null) this.job_date_format = job_date_format;
     }
 
     public String getJob_location_format_regex() {
@@ -379,14 +369,13 @@ public class CompanySchema {
         System.out.println("l2_job_title : " + l2_job_title);
         System.out.println("l2_job_location : " + l2_job_location);
         System.out.println("l2_job_date : " + l2_job_date);
-        System.out.println("l2_job_date_format : " + l2_job_date_format);
         System.out.println("l2_job_description : " + l2_job_description);
         System.out.println("  ");
         System.out.println("l3_job_title: " + l3_job_title);
         System.out.println("l3_job_date : " + l3_job_date);
-        System.out.println("l3_job_date_format : " + l3_job_date_format);
         System.out.println("l3_job_description : " + l3_job_description);
         System.out.println("  ");
+        System.out.println("job_date_format : " + job_date_format);
         System.out.println("job_location_format_regex : " + job_location_format_regex);
     }
 }

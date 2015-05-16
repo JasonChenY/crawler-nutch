@@ -291,6 +291,7 @@ public class DateUtils {
     }
 
     private static String formatDate(String str) {
+        str = str.trim();
         /* Microsoft use some chinese word */
         for ( int i = 0; i < months.size(); i++ ) {
             str = str.replaceAll(months.get(i).getName(), months.get(i).getValue());

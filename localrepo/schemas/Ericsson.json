@@ -13,10 +13,10 @@
           "l2_job_title": "./main:TD[@headers='hdrTitle']/main:SPAN/main:A/text()",
           "l2_job_location": "substring-before(./main:TD[@headers='hdrLocation']/main:SPAN/text(),',')",
           "l2_job_date": "./main:TD[@headers='hdrDate']/main:SPAN/text()",
-          "l2_job_date_format": "MMM dd yyyy",
     },
     "job": {
           "l3_job_description":"//main:DIV[@class='joqReqDescription']",
     }
+    "job_date_format": "MMM dd yyyy",
 }
 

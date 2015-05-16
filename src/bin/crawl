@@ -21,7 +21,7 @@
 # UNLIKE THE NUTCH ALL-IN-ONE-CRAWL COMMAND THIS SCRIPT DOES THE LINK INVERSION AND 
 # INDEXING FOR EACH BATCH
 
-#H#crawl [--seedir=<seedDir>]
+#H#crawl [--seeddir=<seedDir>]
 #H#      [--id=<crawlId>]                           default:WebPages
 #H#      [--limit=<numberOfRounds>]
 #H#      [--solr=<solrURL>]                http://localhost:8080/solr
@@ -51,7 +51,7 @@ help() {
 echo "$1" | grep -qi "^help\|-h" && help
 
 if [ -z $__seeddir ]; then
-   __seeddir="/sdk/tmp/seed.txt"
+   __seeddir="/sdk/tools/apache-nutch-2.3/localrepo/seed.txt"
 fi
 if [ -z $__id ]; then
    __id="WebPages"

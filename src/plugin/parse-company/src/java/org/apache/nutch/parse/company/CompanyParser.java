@@ -888,7 +888,7 @@ public class CompanyParser implements Parser {
               if ( !schema.getL2_job_date().isEmpty() ) {
                   expr = xpath.compile(schema.getL2_job_date());
                   date = (String) expr.evaluate(job, XPathConstants.STRING);
-                  date = DateUtils.formatDate(date, schema.getL2_job_date_format());
+                  date = DateUtils.formatDate(date, schema.getJob_date_format());
               } else {
                   date = DateUtils.getCurrentDate();
               }
@@ -943,7 +943,7 @@ public class CompanyParser implements Parser {
           expr = xpath.compile(schema.getL3_job_date());
           l3_date = (String) expr.evaluate(doc, XPathConstants.STRING);
           LOG.info(url + " Date: " + l3_date);
-          l3_date = DateUtils.formatDate(l3_date, schema.getL3_job_date_format());
+          l3_date = DateUtils.formatDate(l3_date, schema.getJob_date_format());
           /* Normally job date should be extracted from L2 page, but if configured which means use this */
           page.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(l3_date.getBytes()));
       }
@@ -1111,7 +1111,7 @@ public class CompanyParser implements Parser {
           if ( !schema.getL2_job_date().isEmpty() ) {
               String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
               date = doc.read(pattern_date, String.class);
-              date = DateUtils.formatDate(date, schema.getL2_job_date_format());
+              date = DateUtils.formatDate(date, schema.getJob_date_format());
           } else {
               date = DateUtils.getCurrentDate();
           }
@@ -1216,7 +1216,7 @@ public class CompanyParser implements Parser {
       if ( !schema.getL3_job_date().isEmpty() ) {
           l3_date = doc.read(schema.getL3_job_date(), String.class);
           LOG.info(url + " Date: " + l3_date);
-          l3_date = DateUtils.formatDate(l3_date, schema.getL3_job_date_format());
+          l3_date = DateUtils.formatDate(l3_date, schema.getJob_date_format());
           /* Normally job date should be extracted from L2 page, but if configured which means use this */
           page.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(l3_date.getBytes()));
       }
