@@ -1,0 +1,26 @@
+{ 
+    "company" : "Huawei",
+    "l1_url" : "http://career.huawei.com/recruitment/services/portal/portalpub/getJob/page/10/1?orderBy=ISS_STARTDATE_DESC&countryName=China&jobType=1&_=1431727503633",
+    "page_list" : {
+          "l2_template_for_nextpage_url" : "http://career.huawei.com/recruitment/services/portal/portalpub/getJob/page/10/2?orderBy=ISS_STARTDATE_DESC&countryName=China&jobType=1&_=1431727503633",
+          "l2_nextpage_regex" : "/(.*page\\/10\\/)(\\d+)(.*)/",
+          "l2_last_page" : "$.pageVO.totalPages",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "$.result",
+          "l2_template_for_joburl" : "http://career.huawei.com/recruitment/services/portal/portalpub/getJobDetail?jobId=123456",
+          "l2_template_for_joburl_repr": "http://career.huawei.com/recruitment/joinUs.html#?jobId=123456",
+          "l2_joburl_regex" : "/(.*jobId=)(\\d+)(.*)/",
+          "l2_schema_for_joburl" : "jobId",
+          "l2_job_title" : "jobname",
+          "l2_job_location" : "jobArea",
+          "l2_job_date" : "creationDate",
+          "l2_job_date_format" : "yyyy-MM-dd",
+          "l2_job_family" : "jobFamilyName",
+    },
+    "job" : {
+          "l3_job_description" : "$.['mainBusiness','jobRequire']"
+    }
+    "job_location_format_regex" : "s/(.*-)*\\s*([^-]+)(\\s*-\\s*)?$/$2/g",
+}
+

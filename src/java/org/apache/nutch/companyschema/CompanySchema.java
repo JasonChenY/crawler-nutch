@@ -39,6 +39,7 @@ public class CompanySchema {
 
     private String l2_schema_for_jobs;
     private String l2_template_for_joburl;
+    private String l2_template_for_joburl_repr; /* For Huawei, one url for fetch json, this url for apply */
     private String l2_joburl_regex;
     private String l2_schema_for_joburl;
     private String l2_schema_for_joburl_repr; /* For Danone, one url for fetch pdf, another(repr) for apply */
@@ -55,6 +56,9 @@ public class CompanySchema {
     private String l3_job_date;
     private String l3_job_date_format;
     private String l3_job_description;
+
+    /* mainly for Huawei's  country-province-city format */
+    private String job_location_format_regex;
 
     public CompanySchema(String n) {
         setName(n);
@@ -77,6 +81,7 @@ public class CompanySchema {
 
         setL2_schema_for_jobs("");
         setL2_template_for_joburl("");
+        setL2_template_for_joburl_repr("");
         setL2_joburl_regex("");
         setL2_schema_for_joburl("");
         setL2_schema_for_joburl_repr("");
@@ -90,6 +95,8 @@ public class CompanySchema {
         setL3_job_date("");
         setL3_job_date_format("");
         setL3_job_description("");
+
+        setJob_location_format_regex("");
     }
 
     public String getName() {
@@ -232,6 +239,14 @@ public class CompanySchema {
         if (l2_template_for_joburl != null) this.l2_template_for_joburl = l2_template_for_joburl;
     }
 
+    public String getL2_template_for_joburl_repr() {
+        return l2_template_for_joburl_repr;
+    }
+
+    public void setL2_template_for_joburl_repr(String l2_template_for_joburl_repr) {
+        if (l2_template_for_joburl_repr != null) this.l2_template_for_joburl_repr = l2_template_for_joburl_repr;
+    }
+
     public String getL2_joburl_regex() {
         return l2_joburl_regex;
     }
@@ -328,6 +343,14 @@ public class CompanySchema {
         if (l3_job_description != null) this.l3_job_description = l3_job_description;
     }
 
+    public String getJob_location_format_regex() {
+        return job_location_format_regex;
+    }
+
+    public void setJob_location_format_regex(String job_location_format_regex) {
+        if (job_location_format_regex != null) this.job_location_format_regex = job_location_format_regex;
+    }
+
     public void print() {
         System.out.println("name : " + name);
         System.out.println("cookie : " + cookie);
@@ -349,6 +372,7 @@ public class CompanySchema {
         System.out.println("  ");
         System.out.println("l2_schema_for_jobs : " + l2_schema_for_jobs);
         System.out.println("l2_template_for_joburl : " + l2_template_for_joburl);
+        System.out.println("l2_template_for_joburl_repr : " + l2_template_for_joburl_repr);
         System.out.println("l2_joburl_regex : " + l2_joburl_regex);
         System.out.println("l2_schema_for_joburl : " + l2_schema_for_joburl);
         System.out.println("l2_schema_for_joburl_repr : " + l2_schema_for_joburl_repr);
@@ -362,6 +386,8 @@ public class CompanySchema {
         System.out.println("l3_job_date : " + l3_job_date);
         System.out.println("l3_job_date_format : " + l3_job_date_format);
         System.out.println("l3_job_description : " + l3_job_description);
+        System.out.println("  ");
+        System.out.println("job_location_format_regex : " + job_location_format_regex);
     }
 }
 

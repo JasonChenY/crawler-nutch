@@ -6,7 +6,7 @@
     "page_list" : {
 	      "l2_template_for_nextpage_url" : "http://job.alibaba.com/zhaopin/socialPositionList/doList.json",
           "l2_nextpage_method" : "POST",
-	      "l2_template_for_nextpage_postdata" : "pageSize=10&pageIndex=1"
+	      "l2_template_for_nextpage_postdata" : "pageSize=10&pageIndex=1",
           "l2_nextpage_regex" : "/(.*pageIndex=)(\\d+)(.*)/",
           "l2_nextpage_increment" : "1",
           "l2_last_page" : "$.returnValue.totalPage",

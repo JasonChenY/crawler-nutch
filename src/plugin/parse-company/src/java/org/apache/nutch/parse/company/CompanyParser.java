@@ -39,6 +39,12 @@ import java.util.HashSet;
 
 
 import org.apache.avro.util.Utf8;
+import org.apache.nutch.companyschema.*;
+import org.apache.nutch.companyschema.CompanySchema;
+import org.apache.nutch.companyschema.CompanySchemaRepository;
+import org.apache.nutch.companyschema.CompanyUtils;
+import org.apache.nutch.companyschema.DateUtils;
+import org.apache.nutch.companyschema.LocationUtils;
 import org.apache.nutch.storage.Mark;
 import org.apache.nutch.util.*;
 import org.apache.nutch.util.Bytes;
@@ -82,11 +88,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Iterator;
 import javax.xml.namespace.NamespaceContext;
-
-import org.apache.nutch.companyschema.CompanyUtils;
-import org.apache.nutch.companyschema.DateUtils;
-import org.apache.nutch.companyschema.CompanySchema;
-import org.apache.nutch.companyschema.CompanySchemaRepository;
 
 import org.apache.nutch.indexer.solr.SolrUtils;
 
@@ -454,7 +455,8 @@ public class CompanyParser implements Parser {
           } else if ( CompanyUtils.isListLink(page)) {
               parse = getParse_list_json(null, url, page, schema, doc);
           } else if ( CompanyUtils.isSummaryLink(page)) {
-              /* Summary Page should not be in JSON format */
+              /* Summary Page in JSON format (Huawei) */
+              parse = getParse_summary_json(url, page, schema, doc);
           }
       }
     } catch (MalformedURLException e) {
@@ -713,40 +715,7 @@ public class CompanyParser implements Parser {
       Parse parse = new Parse("page list", "page list", new Outlink[0], status);
 
       try {
-          if (schema.getL2_template_for_nextpage_url().isEmpty()) {
-          /* normal case where next page is a href, can generate list of new urls basing on pattern */
-              PatternMatcherInput matcherInput = new PatternMatcherInput(page_list_url);
-              if (plUtil.match(regex, matcherInput)) {
-              /* till now we will only have one matcher for url parameters, so use if instead of while-loop */
-                  MatchResult result = plUtil.getMatch();
-              /* In general we should define 3 group for regex, can be 2 if the patter is in end */
-
-                  String prefix = result.group(1);
-
-                  int start = Integer.parseInt(result.group(2));
-
-                  String suffix = "";
-                  if (result.groups() > 3) suffix = result.group(3);
-
-                  for (int i = start; i <= last; i += incr) {
-                      String newurl = prefix + Integer.toString(i) + suffix;
-
-                      WebPage newPage = WebPage.newBuilder().build();
-                      newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                      CompanyUtils.setCompanyName(newPage, schema.getName());
-                      CompanyUtils.setListLink(newPage);
-                      newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-
-                  /* dont need to add post data here, we won't handle it,
-                   * if there is any strange site do this way, will add it
-                   **/
-                      parse.addPage(newurl, newPage);
-                      if (runtime_debug) break;
-                  }
-              } else {
-                  LOG.error(key + " failed to find nextpage url via regex " + regex);
-              }
-          } else {
+          if ( schema.getL2_nextpage_method().equals("POST") ) {
               /* normally this should be using method POST with some dynamic data, we should do pattern match/replace inside dynamic data */
               String l2_postdata = schema.getL2_template_for_nextpage_postdata();
               if (l2_postdata.isEmpty()) {
@@ -792,6 +761,39 @@ public class CompanyParser implements Parser {
                   }
               } else {
                   LOG.error(key + " failed to find nextpage pattern from postdata");
+              }
+          } else {
+              /* normal case where next page is a href, can generate list of new urls basing on pattern */
+              PatternMatcherInput matcherInput = new PatternMatcherInput(page_list_url);
+              if (plUtil.match(regex, matcherInput)) {
+              /* till now we will only have one matcher for url parameters, so use if instead of while-loop */
+                  MatchResult result = plUtil.getMatch();
+              /* In general we should define 3 group for regex, can be 2 if the patter is in end */
+
+                  String prefix = result.group(1);
+
+                  int start = Integer.parseInt(result.group(2));
+
+                  String suffix = "";
+                  if (result.groups() > 3) suffix = result.group(3);
+
+                  for (int i = start; i <= last; i += incr) {
+                      String newurl = prefix + Integer.toString(i) + suffix;
+
+                      WebPage newPage = WebPage.newBuilder().build();
+                      newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                      CompanyUtils.setCompanyName(newPage, schema.getName());
+                      CompanyUtils.setListLink(newPage);
+                      newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+                  /* dont need to add post data here, we won't handle it,
+                   * if there is any strange site do this way, will add it
+                   **/
+                      parse.addPage(newurl, newPage);
+                      if (runtime_debug) break;
+                  }
+              } else {
+                  LOG.error(key + " failed to find nextpage url via regex " + regex);
               }
           }
       } catch ( MalformedPerl5PatternException pe ) {
@@ -864,6 +866,13 @@ public class CompanyParser implements Parser {
                   l2_joburl_repr = (String) ((String) expr.evaluate(job, XPathConstants.STRING)).trim();
                   l2_joburl_repr = guess_URL(l2_joburl_repr, url, schema.getL1_url());
               }
+              if ( !schema.getL2_template_for_joburl_repr().isEmpty() ) {
+                  /* Till now didn't see repr url need to be replaced with regex yet,
+                   * only hit this for Huawei/Json case, will consider this if necessary later
+                   * In general this should not happen, because repr urls are extraced from HTML href here,
+                   * it is unreasonable to have a webpage with href again to be replaced.
+                   */
+              }
 
               expr = xpath.compile(schema.getL2_job_title());
               String title = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
@@ -872,8 +881,8 @@ public class CompanyParser implements Parser {
               title = SolrUtils.stripNonCharCodepoints(title);
 
               expr = xpath.compile(schema.getL2_job_location());
-              String location = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
-              location = SolrUtils.stripNonCharCodepoints(location);
+              String location = (String) expr.evaluate(job, XPathConstants.STRING);
+              location = LocationUtils.format(location, schema.getJob_location_format_regex());
 
               String date = "";
               if ( !schema.getL2_job_date().isEmpty() ) {
@@ -969,7 +978,7 @@ public class CompanyParser implements Parser {
           nextpage_url = doc.read(schema.getL2_schema_for_nextpage_url());
           LOG.debug(url + " Got nextpage url: " + nextpage_url);
       } else {
-          LOG.debug(url + " (Normal Case) use l2_prefix_for_nextpage_url instead of l2_schema_for_nextpage_url");
+          LOG.debug(url + " (Normal Case) use l2_template_for_nextpage_url instead of l2_schema_for_nextpage_url");
       }
       nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
 
@@ -1039,6 +1048,31 @@ public class CompanyParser implements Parser {
           /* no such case */
       }
 
+      /* HuaWei case, real job url should also be replaced */
+      String prefix_repr="";
+      String suffix_repr="";
+      String l2_template_for_joburl_repr = schema.getL2_template_for_joburl_repr();
+      if ( !l2_template_for_joburl_repr.isEmpty() ) {
+          LOG.debug(url + " l2_template_for_joburl_repr: " + l2_template_for_joburl_repr);
+
+          String regex = schema.getL2_joburl_regex();
+          try {
+              Perl5Util plUtil = new Perl5Util();
+              PatternMatcherInput matcherInput = new PatternMatcherInput(l2_template_for_joburl_repr);
+              if ( plUtil.match(regex, matcherInput)) {
+                  MatchResult result = plUtil.getMatch();
+                  prefix_repr = result.group(1);
+                  if (result.groups() > 3) suffix_repr = result.group(3);
+              } else {
+                  LOG.warn(url + " failed to match with regex " + regex);
+              }
+          } catch ( MalformedPerl5PatternException pe ) {
+              LOG.warn(url + " failed to compile regex " + regex);
+          }
+      } else {
+          /* no such case */
+      }
+
       for ( int i = 0; i < jobs.size(); i++ ) {
               /*
                * Dont use this old way, it will always try to cast to some type, which we not know in code
@@ -1071,7 +1105,7 @@ public class CompanyParser implements Parser {
 
           String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
           String location = doc.read(pattern_location, String.class);
-          location = SolrUtils.stripNonCharCodepoints(location);
+          location = LocationUtils.format(location, schema.getJob_location_format_regex());
 
           String date = "";
           if ( !schema.getL2_job_date().isEmpty() ) {
@@ -1082,10 +1116,20 @@ public class CompanyParser implements Parser {
               date = DateUtils.getCurrentDate();
           }
 
+          /* No real case for this yet, just porting from Danone/HTML to here */
           String newurl_repr = "";
           if ( !schema.getL2_schema_for_joburl_repr().isEmpty() ) {
               String pattern_url_repr = pattern_prefix + "." + schema.getL2_schema_for_joburl_repr();
               newurl_repr = doc.read(pattern_url_repr, String.class);
+              newurl_repr = guess_URL(newurl_repr, url, schema.getL1_url());
+          }
+
+          /*HuaWei case, real job url should also be replaced basing on template with regex
+          * Now we assume should be the same regex,
+          * it is possible need to be changed later with another regex for other company
+          * */
+          if ( !schema.getL2_template_for_joburl_repr().isEmpty() ) {
+              newurl_repr = prefix_repr + newurl + suffix_repr;
               newurl_repr = guess_URL(newurl_repr, url, schema.getL1_url());
           }
 
@@ -1154,6 +1198,46 @@ public class CompanyParser implements Parser {
           if ( runtime_debug ) break;
       }
 
+      return parse;
+  }
+
+  private Parse getParse_summary_json(String url, WebPage page, CompanySchema schema, DocumentContext doc)
+      throws MalformedURLException, PathNotFoundException {
+
+      String l3_title = "";
+      /* l3 title is totally optional */
+      if ( !schema.getL3_job_title().isEmpty() ) {
+          l3_title = doc.read(schema.getL3_job_title(), String.class);
+          l3_title.replaceAll("\\s+", " ");
+          l3_title = SolrUtils.stripNonCharCodepoints(l3_title);
+      }
+
+      String l3_date = "";
+      if ( !schema.getL3_job_date().isEmpty() ) {
+          l3_date = doc.read(schema.getL3_job_date(), String.class);
+          LOG.info(url + " Date: " + l3_date);
+          l3_date = DateUtils.formatDate(l3_date, schema.getL3_job_date_format());
+          /* Normally job date should be extracted from L2 page, but if configured which means use this */
+          page.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(l3_date.getBytes()));
+      }
+
+      String l3_description = "";
+      if ( !schema.getL3_job_description().isEmpty()) {
+          Map<String, String> descs = doc.read(schema.getL3_job_description(), Map.class);
+          for (String value : descs.values()) {
+              l3_description += value.replaceAll("\n", "<BR/>");
+              l3_description += "<BR/>";
+          }
+      }
+      LOG.info(url + " Title: " + l3_title +
+              "\nDescription: " + ((l3_description.length()>200)?l3_description.substring(0, 200):l3_description));
+      /* something to be done here,
+       * we can select don't configure abstract & description in schema file,
+       * then fallback to the default html parser implementation, html doc title and full page text.
+       */
+      ParseStatus status = ParseStatus.newBuilder().build();
+      status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+      Parse parse = new Parse(l3_description, l3_title, new Outlink[0], status);
       return parse;
   }
 

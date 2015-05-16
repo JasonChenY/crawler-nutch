@@ -133,6 +133,7 @@ public class CompanySchemaRepository {
           if ( job_list != null ) {
               companySchema.setL2_schema_for_jobs((String) job_list.get("l2_schema_for_jobs"));
               companySchema.setL2_template_for_joburl((String) job_list.get("l2_template_for_joburl"));
+              companySchema.setL2_template_for_joburl_repr((String) job_list.get("l2_template_for_joburl_repr"));
               companySchema.setL2_joburl_regex((String) job_list.get("l2_joburl_regex"));
               companySchema.setL2_schema_for_joburl((String) job_list.get("l2_schema_for_joburl"));
               companySchema.setL2_schema_for_joburl_repr((String) job_list.get("l2_schema_for_joburl_repr"));
@@ -150,6 +151,8 @@ public class CompanySchemaRepository {
               companySchema.setL3_job_date_format((String) job.get("l3_job_date_format"));
               companySchema.setL3_job_description((String) job.get("l3_job_description"));
           }
+
+          companySchema.setJob_location_format_regex((String) json.get("job_location_format_regex"));
 
           return companySchema;
       } catch (Exception e) {
