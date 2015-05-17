@@ -35,6 +35,8 @@ public class CompanyUtils {
     public final static String LINK_TYPE_LIST = "list";
     public final static String LINK_TYPE_SUMMARY = "summary";
 
+    public static Utf8 company_cookie = new Utf8("__company_cookie__");
+
     /* some helper function */
     public static String getCompanyName(WebPage page) {
         if (page.getMetadata().containsKey(company_key)) {

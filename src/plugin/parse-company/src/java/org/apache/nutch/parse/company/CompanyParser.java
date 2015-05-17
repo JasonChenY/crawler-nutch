@@ -537,7 +537,7 @@ public class CompanyParser implements Parser {
               return null;
           }
 
-          return generate_next_pages(url, schema, nextpage_url, last, page.getScore() * 0.95f);
+          return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
       } else {
           /* fallback to 'click' 'Next' button
            * Following two meta data should appear to decide when to finish the iterate.
@@ -678,6 +678,8 @@ public class CompanyParser implements Parser {
           newPage.setScore(score);
           newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
 
+          newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
+
           /* should change the new page url a bit, otherwise, ParseJob firstly save newPage to db
            * then again update something on the current page and write back to db
            * we wont go ahead, now the logic:
@@ -693,7 +695,7 @@ public class CompanyParser implements Parser {
           return parse;
       }
   }
-  private Parse generate_next_pages(String key, CompanySchema schema, String page_list_url, int last, float score) {
+  private Parse generate_next_pages(String key, WebPage page, String page_list_url, CompanySchema schema, int last, float score) {
       Perl5Util plUtil = new Perl5Util();
 
       /* Page number regex */
@@ -754,7 +756,7 @@ public class CompanyParser implements Parser {
                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
                       newPage.setScore(score);
                       newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
-
+                      newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
                       parse.addPage(newurl, newPage);
                       if (runtime_debug) break;
                   }
@@ -785,6 +787,7 @@ public class CompanyParser implements Parser {
                       CompanyUtils.setListLink(newPage);
                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
                       newPage.setScore(score);
+                      newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
                   /* dont need to add post data here, we won't handle it,
                    * if there is any strange site do this way, will add it
                    **/
@@ -905,6 +908,8 @@ public class CompanyParser implements Parser {
 
               newPage.setScore(page.getScore()/jobs.getLength());
 
+              newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
+
               if ( !l2_joburl_repr.isEmpty() ) {
                   newPage.setReprUrl(l2_joburl_repr);
                   LOG.debug(url + " with repr url: " + l2_joburl_repr);
@@ -1003,7 +1008,7 @@ public class CompanyParser implements Parser {
           return null;
       }
 
-      return generate_next_pages(url, schema, nextpage_url, last, page.getScore() * 0.95f);
+      return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
   }
 
   private Parse getParse_list_json(Parse parse, String url, WebPage page, CompanySchema schema, DocumentContext doc)
@@ -1146,6 +1151,8 @@ public class CompanyParser implements Parser {
           newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
           newPage.setScore(page.getScore()/jobs.size());
+
+          newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
 
           if ( !newurl_repr.isEmpty() ) {
               newPage.setReprUrl(newurl_repr);
