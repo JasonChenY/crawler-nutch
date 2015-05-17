@@ -56,6 +56,7 @@
      <ant dir="scoring-opic" target="deploy"/>
      <ant dir="subcollection" target="deploy"/>
      <ant dir="tld" target="deploy"/>
+     <ant dir="scoring-company" target="deploy"/>
      <ant dir="urlfilter-automaton" target="deploy"/>
      <ant dir="urlfilter-domain" target="deploy" />
      <ant dir="urlfilter-prefix" target="deploy"/>
@@ -149,6 +150,7 @@
     <ant dir="scoring-opic" target="clean"/>
     <ant dir="subcollection" target="clean"/>
     <ant dir="tld" target="clean"/>
+    <ant dir="scoring-opic" target="clean"/>
     <ant dir="urlfilter-automaton" target="clean"/>
     <ant dir="urlfilter-domain" target="clean" />
     <ant dir="urlfilter-prefix" target="clean"/>

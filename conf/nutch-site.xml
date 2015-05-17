@@ -45,7 +45,7 @@
 
 <property>
   <name>plugin.includes</name>
-  <value>protocol-httpclient4|parse-company|index-company|urlnormalizer-pass|scoring-opic|indexer-solr</value>
+  <value>protocol-httpclient4|parse-company|index-company|urlnormalizer-pass|scoring-company|indexer-solr</value>
   <description>dont need urlfilter-regex</description>
 </property>
 

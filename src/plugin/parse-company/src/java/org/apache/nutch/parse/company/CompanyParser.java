@@ -537,7 +537,7 @@ public class CompanyParser implements Parser {
               return null;
           }
 
-          return generate_next_pages(url, schema, nextpage_url, last);
+          return generate_next_pages(url, schema, nextpage_url, last, page.getScore());
       } else {
           /* fallback to 'click' 'Next' button
            * Following two meta data should appear to decide when to finish the iterate.
@@ -675,7 +675,7 @@ public class CompanyParser implements Parser {
           CompanyUtils.setCompanyName(newPage, schema.getName());
           CompanyUtils.setEntryLink(newPage);
           newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-
+          newPage.setScore(page.getScore() * 0.99f);
           newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
 
           /* should change the new page url a bit, otherwise, ParseJob firstly save newPage to db
@@ -693,7 +693,7 @@ public class CompanyParser implements Parser {
           return parse;
       }
   }
-  private Parse generate_next_pages(String key, CompanySchema schema, String page_list_url, int last) {
+  private Parse generate_next_pages(String key, CompanySchema schema, String page_list_url, int last, float score) {
       Perl5Util plUtil = new Perl5Util();
 
       /* Page number regex */
@@ -731,6 +731,7 @@ public class CompanyParser implements Parser {
                   String suffix = "";
                   if (result.groups() > 3) suffix = result.group(3);
 
+                  float newscore = (last >= start) ? score * incr / (last - start + incr) : score;
 
                   for (int i = start; i <= last; i += incr) {
                       String newpostdata = prefix + Integer.toString(i) + suffix;
@@ -753,7 +754,7 @@ public class CompanyParser implements Parser {
                       CompanyUtils.setCompanyName(newPage, schema.getName());
                       CompanyUtils.setListLink(newPage);
                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-
+                      newPage.setScore(newscore);
                       newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
 
                       parse.addPage(newurl, newPage);
@@ -777,6 +778,8 @@ public class CompanyParser implements Parser {
                   String suffix = "";
                   if (result.groups() > 3) suffix = result.group(3);
 
+                  float newscore = (last >= start) ? score * incr / (last - start + incr) : score;
+
                   for (int i = start; i <= last; i += incr) {
                       String newurl = prefix + Integer.toString(i) + suffix;
 
@@ -785,7 +788,7 @@ public class CompanyParser implements Parser {
                       CompanyUtils.setCompanyName(newPage, schema.getName());
                       CompanyUtils.setListLink(newPage);
                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-
+                      newPage.setScore(newscore);
                   /* dont need to add post data here, we won't handle it,
                    * if there is any strange site do this way, will add it
                    **/
@@ -904,6 +907,8 @@ public class CompanyParser implements Parser {
 
               newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
 
+              newPage.setScore(page.getScore()/jobs.getLength());
+
               if ( !l2_joburl_repr.isEmpty() ) {
                   newPage.setReprUrl(l2_joburl_repr);
                   LOG.debug(url + " with repr url: " + l2_joburl_repr);
@@ -1002,7 +1007,7 @@ public class CompanyParser implements Parser {
           return null;
       }
 
-      return generate_next_pages(url, schema, nextpage_url, last);
+      return generate_next_pages(url, schema, nextpage_url, last, page.getScore());
   }
 
   private Parse getParse_list_json(Parse parse, String url, WebPage page, CompanySchema schema, DocumentContext doc)
@@ -1143,6 +1148,8 @@ public class CompanyParser implements Parser {
           newPage.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(date.getBytes()));
 
           newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+          newPage.setScore(page.getScore()/jobs.size());
 
           if ( !newurl_repr.isEmpty() ) {
               newPage.setReprUrl(newurl_repr);

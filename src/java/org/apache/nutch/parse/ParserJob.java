@@ -72,6 +72,7 @@ public class ParserJob extends NutchTool implements Tool {
     FIELDS.add(WebPage.Field.OUTLINKS);
     FIELDS.add(WebPage.Field.METADATA);
     FIELDS.add(WebPage.Field.HEADERS);
+    FIELDS.add(WebPage.Field.SCORE);
   }
 
   public static class ParserMapper extends
@@ -170,7 +171,7 @@ public class ParserJob extends NutchTool implements Tool {
               return;
           }
           Map<String, WebPage> newPages = parse.getPages();
-          if ( newPages == null ) {
+          if ( newPages == null || newPages.size() == 0 ) {
               return;
           }
           LOG.info("GenerateWebPage for company: " + CompanyUtils.getCompanyName(page));

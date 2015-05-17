@@ -196,6 +196,7 @@
       <packageset dir="${plugins.dir}/scoring-opic/src/java"/>
       <packageset dir="${plugins.dir}/subcollection/src/java"/>
       <packageset dir="${plugins.dir}/tld/src/java"/>
+      <packageset dir="${plugins.dir}/scoring-company/src/java"/>
       <packageset dir="${plugins.dir}/urlfilter-automaton/src/java"/>
       <packageset dir="${plugins.dir}/urlfilter-domain/src/java"/>
       <packageset dir="${plugins.dir}/urlfilter-prefix/src/java"/>
@@ -629,6 +630,7 @@
       <packageset dir="${plugins.dir}/scoring-opic/src/java"/>
       <packageset dir="${plugins.dir}/subcollection/src/java"/>
       <packageset dir="${plugins.dir}/tld/src/java"/>
+      <packageset dir="${plugins.dir}/scoring-company/src/java"/>
       <packageset dir="${plugins.dir}/urlfilter-automaton/src/java"/>
       <packageset dir="${plugins.dir}/urlfilter-domain/src/java"/>
       <packageset dir="${plugins.dir}/urlfilter-prefix/src/java"/>
@@ -1018,6 +1020,7 @@
         <source path="${basedir}/src/plugin/subcollection/src/test/" />
         <source path="${basedir}/src/plugin/tld/src/java/" />
         <source path="${basedir}/src/plugin/tld/src/test/" />
+        <source path="${basedir}/src/plugin/scoring-company/src/java/" />
         <source path="${basedir}/src/plugin/urlfilter-automaton/src/java/" />
         <source path="${basedir}/src/plugin/urlfilter-automaton/src/test/" />
         <source path="${basedir}/src/plugin/urlfilter-domain/src/java/" />
