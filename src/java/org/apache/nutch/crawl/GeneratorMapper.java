@@ -97,6 +97,9 @@ public class GeneratorMapper extends
     float score = page.getScore();
     try {
       score = scoringFilters.generatorSortValue(url, page, score);
+      if (GeneratorJob.LOG.isDebugEnabled()) {
+          GeneratorJob.LOG.debug("score from " + page.getScore() + " -> " + score);
+      }
     } catch (ScoringFilterException e) {
       // ignore
     }

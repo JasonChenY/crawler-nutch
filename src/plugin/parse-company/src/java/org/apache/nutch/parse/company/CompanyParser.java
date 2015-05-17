@@ -537,17 +537,17 @@ public class CompanyParser implements Parser {
               return null;
           }
 
-          return generate_next_pages(url, schema, nextpage_url, last, page.getScore());
+          return generate_next_pages(url, schema, nextpage_url, last, page.getScore() * 0.95f);
       } else {
           /* fallback to 'click' 'Next' button
            * Following two meta data should appear to decide when to finish the iterate.
            * l2_nextpage_postdata_inherit_regex
            * l2_nextpage_endflag
            */
-          return generate_next_page(url, page, nextpage_url, schema , doc, xpath);
+          return generate_next_page(url, page, nextpage_url, schema , doc, xpath, page.getScore() * 0.99f);
       }
   }
-  private Parse generate_next_page(String url, WebPage page, String nextpage_url, CompanySchema schema, Document doc, XPath xpath)
+  private Parse generate_next_page(String url, WebPage page, String nextpage_url, CompanySchema schema, Document doc, XPath xpath, float score)
           throws XPathExpressionException{
       String regex = schema.getL2_nextpage_postdata_inherit_regex();
       String nextpage_endflag = schema.getL2_nextpage_endflag();
@@ -675,7 +675,7 @@ public class CompanyParser implements Parser {
           CompanyUtils.setCompanyName(newPage, schema.getName());
           CompanyUtils.setEntryLink(newPage);
           newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-          newPage.setScore(page.getScore() * 0.99f);
+          newPage.setScore(score);
           newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
 
           /* should change the new page url a bit, otherwise, ParseJob firstly save newPage to db
@@ -731,8 +731,6 @@ public class CompanyParser implements Parser {
                   String suffix = "";
                   if (result.groups() > 3) suffix = result.group(3);
 
-                  float newscore = (last >= start) ? score * incr / (last - start + incr) : score;
-
                   for (int i = start; i <= last; i += incr) {
                       String newpostdata = prefix + Integer.toString(i) + suffix;
                       if (result.groups() > 4) {
@@ -754,7 +752,7 @@ public class CompanyParser implements Parser {
                       CompanyUtils.setCompanyName(newPage, schema.getName());
                       CompanyUtils.setListLink(newPage);
                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-                      newPage.setScore(newscore);
+                      newPage.setScore(score);
                       newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
 
                       parse.addPage(newurl, newPage);
@@ -778,8 +776,6 @@ public class CompanyParser implements Parser {
                   String suffix = "";
                   if (result.groups() > 3) suffix = result.group(3);
 
-                  float newscore = (last >= start) ? score * incr / (last - start + incr) : score;
-
                   for (int i = start; i <= last; i += incr) {
                       String newurl = prefix + Integer.toString(i) + suffix;
 
@@ -788,7 +784,7 @@ public class CompanyParser implements Parser {
                       CompanyUtils.setCompanyName(newPage, schema.getName());
                       CompanyUtils.setListLink(newPage);
                       newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-                      newPage.setScore(newscore);
+                      newPage.setScore(score);
                   /* dont need to add post data here, we won't handle it,
                    * if there is any strange site do this way, will add it
                    **/
@@ -1007,7 +1003,7 @@ public class CompanyParser implements Parser {
           return null;
       }
 
-      return generate_next_pages(url, schema, nextpage_url, last, page.getScore());
+      return generate_next_pages(url, schema, nextpage_url, last, page.getScore() * 0.95f);
   }
 
   private Parse getParse_list_json(Parse parse, String url, WebPage page, CompanySchema schema, DocumentContext doc)
