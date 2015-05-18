@@ -3,21 +3,21 @@
     "l1_url" : "http://hr.tencent.com/position.php",
     "l1_method" : "GET",
     "page_list" : {
-          "l2_schema_for_nextpage_url" : "//main:DIV[@class='pagenav']/main:A[3]/@href",
-          "l2_nextpage_regex" : "/(.*start=)(\\d+)(.*)/",
+          "l2_schema_for_nextpage_url" : "//DIV[@class='pagenav']/A[3]/@href",
+          "l2_nextpage_regex" : "s/(.*start=)(\\d+)(.*)/$1-deadbeaf-$3/g",
           "l2_nextpage_increment" : "10",
-          "l2_last_page" : "//main:DIV[@class='pagenav']/main:A[last()-1]/text()",
+          "l2_last_page" : "//DIV[@class='pagenav']/A[last()-1]/text()",
     }, 
     "job_list" : {
-          "l2_schema_for_jobs" : "//main:TABLE[@class='tablelist']/TBODY/main:TR[@class='even' or @class='odd']",
-          "l2_schema_for_joburl": "./main:TD[1]/main:A/@href",
-          "l2_job_title": "./main:TD[1]/main:A/text()",
-          "l2_job_location": "./main:TD[4]/text()",
-          "l2_job_date": "./main:TD[5]/text()"
+          "l2_schema_for_jobs" : "//TABLE[@class='tablelist']/TBODY/TR[@class='even' or @class='odd']",
+          "l2_schema_for_joburl": "./TD[1]/A/@href",
+          "l2_job_title": "./TD[1]/A/text()",
+          "l2_job_location": "./TD[4]/text()",
+          "l2_job_date": "./TD[5]/text()"
     },
     "job": {
-          "l3_job_title":"//main:TD[@id='sharetitle']/text()",
-          "l3_job_description":"//main:UL[@class='squareli']",
+          "l3_job_title":"//TD[@id='sharetitle']/text()",
+          "l3_job_description":"//UL[@class='squareli']",
     }
 }
 

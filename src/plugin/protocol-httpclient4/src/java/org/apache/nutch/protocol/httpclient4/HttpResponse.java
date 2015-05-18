@@ -178,15 +178,15 @@ public class HttpResponse implements Response {
         try {
         /* cookie handling */
             if ( !page.getMetadata().containsKey(CompanyUtils.company_cookie) ) {
-                if ( CompanyUtils.isEntryLink(page) ) {
+                if ( true /* CompanyUtils.isEntryLink(page) */) {
                     if ( !schema.getCookie().isEmpty() ) {
                      /* for site like microsoft, customer can configure cookie not expired?
                      * otherwise, send the request without cookie, server will return a new cookie
                      **/
                         request.addHeader("Cookie", schema.getCookie());
-                        if (Http.LOG.isDebugEnabled()) Http.LOG.debug(url.toString() + " begin with schema cookie for ENTRY page");
+                        if (Http.LOG.isDebugEnabled()) Http.LOG.debug(url.toString() + " begin with schema cookie");
                     } else {
-                        if (Http.LOG.isDebugEnabled()) Http.LOG.debug(url.toString() + " begin without cookie for !ENTRY page");
+                        if (Http.LOG.isDebugEnabled()) Http.LOG.debug(url.toString() + " begin without cookie");
                     }
                 }
                 context.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);
@@ -269,32 +269,33 @@ public class HttpResponse implements Response {
                 page.getHeaders().put(new Utf8(key), new Utf8(headers.get(key)));
             }
 
-      /* save the cookies into pages */
-            final ByteArrayOutputStream outbuffer = new ByteArrayOutputStream();
-            final ObjectOutputStream outstream = new ObjectOutputStream(outbuffer);
-            outstream.writeObject(this.cookieStore);
-            outstream.close();
-            page.getMetadata().put(CompanyUtils.company_cookie, ByteBuffer.wrap(outbuffer.toByteArray()));
+            if ( schema.getCookie().isEmpty() ) {
+      /* save the cookies into pages, only if no cookie configured in schema */
+                final ByteArrayOutputStream outbuffer = new ByteArrayOutputStream();
+                final ObjectOutputStream outstream = new ObjectOutputStream(outbuffer);
+                outstream.writeObject(this.cookieStore);
+                outstream.close();
+                page.getMetadata().put(CompanyUtils.company_cookie, ByteBuffer.wrap(outbuffer.toByteArray()));
 
-            if ( Http.LOG.isDebugEnabled() ) {
-                final List<Cookie> cookies = this.cookieStore.getCookies();
-                Http.LOG.debug(url.toString() + " saved to WebPage: " + cookies.size() + " cookies");
+                if (Http.LOG.isDebugEnabled()) {
+                    final List<Cookie> cookies = this.cookieStore.getCookies();
+                    Http.LOG.debug(url.toString() + " saved to WebPage: " + cookies.size() + " cookies");
 
-                for (int i = 0; i < cookies.size(); i++) {
-                    final Cookie cookie = cookies.get(i);
-                    if ( cookie.getValue() != null ) {
-                        Http.LOG.debug("version: " + cookie.getVersion());
-                    }
-                    Http.LOG.debug("name: " + cookie.getName());
-                    Http.LOG.debug("value: " + cookie.getValue());
-                    Http.LOG.debug("domain:" + cookie.getDomain());
-                    Http.LOG.debug("path:" + cookie.getPath());
-                    if ( cookie.getExpiryDate() != null ) {
-                        Http.LOG.debug("expire:" + cookie.getExpiryDate().toString());
+                    for (int i = 0; i < cookies.size(); i++) {
+                        final Cookie cookie = cookies.get(i);
+                        if (cookie.getValue() != null) {
+                            Http.LOG.debug("version: " + cookie.getVersion());
+                        }
+                        Http.LOG.debug("name: " + cookie.getName());
+                        Http.LOG.debug("value: " + cookie.getValue());
+                        Http.LOG.debug("domain:" + cookie.getDomain());
+                        Http.LOG.debug("path:" + cookie.getPath());
+                        if (cookie.getExpiryDate() != null) {
+                            Http.LOG.debug("expire:" + cookie.getExpiryDate().toString());
+                        }
                     }
                 }
             }
-
         } finally {
             request.releaseConnection();
         }

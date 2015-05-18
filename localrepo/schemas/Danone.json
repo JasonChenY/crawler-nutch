@@ -3,7 +3,7 @@
     "l1_url" : "http://www.danone.com.cn/career-recruitment",
     "page_list" : {
           "l2_schema_for_nextpage_url" : "//DIV[@id='SE_pagebar']/A[2]/@href",
-          "l2_nextpage_regex" : "/(.*page=)(\\d+)(.*)/",
+          "l2_nextpage_regex" : "s/(.*page=)(\\d+)(.*)/$1-deadbeaf-$3/g",
           "l2_nextpage_increment" : "1",
           "l2_last_page" : "//DIV[@id='SE_pagebar']/A[last()-3]/text()",
     }, 
@@ -15,9 +15,9 @@
           "l2_job_location": "substring-after(./DIV[@class='SE_titleinfo']/DIV[@class='SE_t2']/text(), ' China  ')",
     },
     "job": {
-          "l3_job_title":"//main:DIV[@class='page']/main:P[4]/text()",
-          "l3_job_date":"substring(//main:DIV[@class='page']/main:P[13]/text(),'14','10')",
-          "l3_job_description":"//main:DIV[@class='page']/main:P[13]/following::*[string-length(normalize-space(text()))>0]",
+          "l3_job_title":"//DIV[@class='page']/P[4]/text()",
+          "l3_job_date":"substring(//DIV[@class='page']/P[13]/text(),'14','10')",
+          "l3_job_description":"//DIV[@class='page']/P[13]/following::*[string-length(normalize-space(text()))>0]",
     }
     "job_date_format": "MM-dd-yyyy",
 }

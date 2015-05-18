@@ -86,6 +86,7 @@ public class LocationUtils {
         String formats[] = {"",          "" ,              "s/[^-]+-[^-]+-\\s*(\\S*)/$1/g", 
                   "s/[^\\/]+\\/[^\\/]+\\/\\s*(\\S*)/$1/g", "s/(.*-)*\\s*(.*)(\\s*-\\s*)*$/$2/g", };
 
+        /* Huawei */
         String reg = "s/(.*-)*\\s*([^-]+)(\\s*-\\s*)?$/$2/g";
         String tests[] = {"中国-江苏-南京市", "中国-江苏-", " 中国 - 江苏 - 南京市 ", " 中国 - 江苏 - "};
         try {
@@ -94,6 +95,17 @@ public class LocationUtils {
             }
             for ( int i = 0; i < tests.length; i++ ) {
                 System.out.println(tests[i] + " : " + format(tests[i], reg));
+            }
+        } catch ( Exception e ) {
+            e.printStackTrace();
+        }
+
+        /* Honeywell */
+        reg = "s/([^-,]*).*/$1/g";
+        String tests2[] = {"Nanjing-Jiangsu-China", "China", "Shanghai,China"};
+        try {
+            for ( int i = 0; i < tests2.length; i++ ) {
+                System.out.println(tests2[i] + " : " + format(tests2[i], reg));
             }
         } catch ( Exception e ) {
             e.printStackTrace();

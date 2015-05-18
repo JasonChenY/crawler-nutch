@@ -7,7 +7,7 @@
        "l2_template_for_nextpage_url" : "http://careers.peopleclick.eu.com/careerscp/client_nokiasolutionsandnetworks/external/search.do",
        "l2_nextpage_method" : "POST",
        "l2_template_for_nextpage_postdata" : "functionName=search&pageIndex=&com.peopleclick.cp.formdata.jobPost_92175_en-us=&com.peopleclick.cp.formdata.jobPost_92172_en-us=&com.peopleclick.cp.formdata.jobPost_92169_en-us=&com.peopleclick.cp.formdata.jobPost_91861_en-us=&com.peopleclick.cp.formdata.jobPost_91430_en-us=&com.peopleclick.cp.formdata.jobPost_91295_en-us=&com.peopleclick.cp.formdata.jobPost_91291_en-us=&com.peopleclick.cp.formdata.jobPost_91289_en-us=&com.peopleclick.cp.formdata.jobPost_91285_en-us=&com.peopleclick.cp.formdata.jobPost_91281_en-us=&PARAMFILTER%3AfunctionName%3Dsearch%7CpageIndex%3D2%7C=2",
-       "l2_nextpage_regex":"/(.*pageIndex%3D)(\\d+)(%7C=)(\\2)/",
+       "l2_nextpage_regex":"s/(.*pageIndex%3D)(\\d+)(%7C=)(\\2)/$1-deadbeaf-$3-deadbeaf-/g",
        "l2_nextpage_increment":"1",
        "l2_last_page"  : "substring-before(substring-after(//SPAN[@class='pc-rtg-pagination']/INPUT[@class='pc-rtg-navButton'][last()]/@name, 'PARAMFILTER:functionName=search|pageIndex='), '|')",
    },

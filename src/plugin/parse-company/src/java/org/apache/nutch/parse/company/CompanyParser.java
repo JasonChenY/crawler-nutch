@@ -355,6 +355,24 @@ public class CompanyParser implements Parser {
           LOG.debug(url + " : " + content_type);
       }
 
+      if ( runtime_debug ) {
+          String origcontent = new String(page.getContent().array());
+          try {
+              String date = DateUtils.getThreadLocalDateFormat().format(new Date());
+              String suffix = ".html";
+              if ( content_type.equals("application/pdf") ) suffix = ".pdf";
+
+              FileWriter fw = new FileWriter("/tmp/" + date + suffix, true);
+              BufferedWriter bw = new BufferedWriter(fw);
+              bw.write(origcontent);
+              bw.flush();
+              bw.close();
+              fw.close();
+          } catch (Exception ee) {
+              LOG.warn(url + " failed to save debug file " + ee.getMessage());
+          };
+      }
+
       if ( content_type.equals("application/pdf") ) {
           /* Danone case */
           try {
@@ -400,6 +418,7 @@ public class CompanyParser implements Parser {
           parser.setFeature("http://cyberneko.org/html/features/balance-tags/ignore-outside-content", false);
           parser.setFeature("http://cyberneko.org/html/features/balance-tags/document-fragment", true);
           parser.setFeature("http://cyberneko.org/html/features/report-errors", LOG.isTraceEnabled());
+          parser.setFeature("http://xml.org/sax/features/namespaces", false);
           parser.parse(input);
 
           Document doc = parser.getDocument();
@@ -516,7 +535,7 @@ public class CompanyParser implements Parser {
           nextpage_url = (String) expr.evaluate(doc, XPathConstants.STRING);
           LOG.debug(url + " (Normal case) Got nextpage url: " + nextpage_url);
       } else {
-          LOG.debug(url + " (Abnormal case?) use l2_template_for_nextpage_url instead of l2_schema_for_nextpage_url");
+          LOG.debug(url + " (Normal case) use l2_template_for_nextpage_url instead of l2_schema_for_nextpage_url");
       }
       nextpage_url = guess_URL(nextpage_url, url, schema.getL1_url());
 
@@ -637,6 +656,11 @@ public class CompanyParser implements Parser {
               newpostdata = result.toString();
           }
 
+          if ( !schema.getL2_nextpage_regex().isEmpty() ) {
+              /* shall we do the replacement again basing on schema?
+              if so, how to get the current page number ? Stupid Honeywell.
+               */
+          }
           if ( runtime_debug ) {
               try {
                   String date = DateUtils.getThreadLocalDateFormat().format(new Date());
@@ -647,13 +671,14 @@ public class CompanyParser implements Parser {
                   bw.flush();
                   bw.close();
                   fw.close();
-
+/*
                   fw = new FileWriter("/tmp/" + date + ".html", true);
                   bw = new BufferedWriter(fw);
                   bw.write(origcontent);
                   bw.flush();
                   bw.close();
                   fw.close();
+*/
               } catch (Exception ee) {
                   LOG.warn(url + " failed to generate post file " + ee.getMessage());
               };
@@ -695,6 +720,54 @@ public class CompanyParser implements Parser {
           return parse;
       }
   }
+  private String generate_regex_for_nextitem(String regex, int index) {
+      /* this help function is for generating regex from schema file, e.g
+      "l2_nextpage_regex" : "s/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/$1-deadbeaf-$3-deadbeaf-$5/g",
+      this is to regplace "-deadbeaf-" to index nubmer,
+      the generated regex:
+         2nd page: "s/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/$1\\2$3\\2$5/g",
+         3rd page: "s/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/$1\\3$3\\3$5/g",
+      why using strange "-deadbeaf-" is to avoid any possible string in original regex.
+       */
+      String indexString = Integer.toString(index);
+      String newregex = regex.replaceAll("-deadbeaf-", "\\\\"+indexString);
+      /* this can be extended with again Perl5 Regex later if necessary for other usecases */
+      return newregex;
+  }
+  private int get_startitem_from_regex(String regex, String input) throws MalformedPerl5PatternException {
+      try {
+          Perl5Util plUtil = new Perl5Util();
+          //regex for the matcher part of base regex, e.g
+          //"s/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/$1-deadbeaf-$3-deadbeaf-$5/g"
+          // -> "/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/"
+          // with this regex, we can get the start page number in group 2.
+          // neee support Huawei's special case: "s/(.*page\\\\/10\\\\/)(\\d+)(.*)/$1-deadbeaf-$3/g"
+          // schema designer need decide whether using "/" or "#" in regex
+          String match_regex = "";
+          if ( regex.startsWith("s/") ) {
+              match_regex = plUtil.substitute("s/s(\\/[^\\/]+\\/).*/$1/g", regex);
+          } else if ( regex.startsWith("s#") ) {
+              match_regex = plUtil.substitute("s#s(\\#[^\\#]+\\#).*#$1#g", regex);
+          } else throw new MalformedPerl5PatternException("invalid regex");
+
+          LOG.debug("start page number regex " + match_regex + " from orig regex: " + regex);
+
+          PatternMatcherInput matcherInput = new PatternMatcherInput(input);
+          if (plUtil.match(match_regex, matcherInput)) {
+              MatchResult result = plUtil.getMatch();
+              /* we assume the initial page number will appear in the 2nd group
+               * This can be extended later by checking the position of "-deadbeaf-" in replacer part */
+              String start = result.group(2);
+              return Integer.parseInt(start);
+          } else {
+              LOG.warn(input + " failed to get start page number from regex " + regex + " check schema!");
+              throw new MalformedPerl5PatternException(regex);
+          }
+      } catch ( MalformedPerl5PatternException e ) {
+          LOG.warn(input + " failed to get start page number from regex " + regex + " check schema!");
+          throw e;
+      }
+  }
   private Parse generate_next_pages(String key, WebPage page, String page_list_url, CompanySchema schema, int last, float score) {
       Perl5Util plUtil = new Perl5Util();
 
@@ -725,77 +798,51 @@ public class CompanyParser implements Parser {
                   return parse;
               }
 
-              PatternMatcherInput matcherInput = new PatternMatcherInput(l2_postdata);
-              if (plUtil.match(regex, matcherInput)) {
-                  MatchResult result = plUtil.getMatch();
-                  String prefix = result.group(1);
-                  int start = Integer.parseInt(result.group(2));
-                  String suffix = "";
-                  if (result.groups() > 3) suffix = result.group(3);
+              int start = get_startitem_from_regex(regex, l2_postdata);
 
-                  for (int i = start; i <= last; i += incr) {
-                      String newpostdata = prefix + Integer.toString(i) + suffix;
-                      if (result.groups() > 4) {
-                          /* A simple workaround here for Nokia case, need consider to extend the template to
-                           * indicate how is each matched field to be replaced.
-                           */
-                          newpostdata += Integer.toString(i);
-                      }
+              for (int i = start; i <= last; i += incr) {
+                  String newregex = generate_regex_for_nextitem(regex, i);
+                  String newpostdata = plUtil.substitute(newregex, l2_postdata);
                   /* hbase use url as the key, but we will generate series of webpage with same key value,
                    * adding a trailing stuff, and remember to remove it in fetcher/protolcol-http4,
                    * This suffix should survive url normalizer and url filter.
                    * Should not be a problem for indexing, becausee l2 page won't be indexed.
                    * Any problem for other Job?
                    **/
-                      String newurl = page_list_url + "::" + Integer.toString(i);
+                  String newurl = page_list_url + "::" + Integer.toString(i);
 
-                      WebPage newPage = WebPage.newBuilder().build();
-                      newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                      CompanyUtils.setCompanyName(newPage, schema.getName());
-                      CompanyUtils.setListLink(newPage);
-                      newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-                      newPage.setScore(score);
-                      newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
-                      newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
-                      parse.addPage(newurl, newPage);
-                      if (runtime_debug) break;
-                  }
-              } else {
-                  LOG.error(key + " failed to find nextpage pattern from postdata");
+                  WebPage newPage = WebPage.newBuilder().build();
+                  newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                  CompanyUtils.setCompanyName(newPage, schema.getName());
+                  CompanyUtils.setListLink(newPage);
+                  newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+                  newPage.setScore(score);
+                  newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
+                  newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
+                  parse.addPage(newurl, newPage);
+                  if (runtime_debug) break;
               }
           } else {
               /* normal case where next page is a href, can generate list of new urls basing on pattern */
-              PatternMatcherInput matcherInput = new PatternMatcherInput(page_list_url);
-              if (plUtil.match(regex, matcherInput)) {
-              /* till now we will only have one matcher for url parameters, so use if instead of while-loop */
-                  MatchResult result = plUtil.getMatch();
-              /* In general we should define 3 group for regex, can be 2 if the patter is in end */
-
-                  String prefix = result.group(1);
-
-                  int start = Integer.parseInt(result.group(2));
-
-                  String suffix = "";
-                  if (result.groups() > 3) suffix = result.group(3);
-
-                  for (int i = start; i <= last; i += incr) {
-                      String newurl = prefix + Integer.toString(i) + suffix;
-
-                      WebPage newPage = WebPage.newBuilder().build();
-                      newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
-                      CompanyUtils.setCompanyName(newPage, schema.getName());
-                      CompanyUtils.setListLink(newPage);
-                      newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
-                      newPage.setScore(score);
-                      newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
+              int start = get_startitem_from_regex(regex, page_list_url);
+              for (int i = start; i <= last; i += incr) {
+                  String newregex = generate_regex_for_nextitem(regex, i);
+                  String newurl = plUtil.substitute(newregex, page_list_url);
+                  if ( LOG.isDebugEnabled() ) {
+                      LOG.debug(newurl + " from regex " + newregex + " : " + regex);
+                  }
+                  WebPage newPage = WebPage.newBuilder().build();
+                  newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                  CompanyUtils.setCompanyName(newPage, schema.getName());
+                  CompanyUtils.setListLink(newPage);
+                  newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+                  newPage.setScore(score);
+                  newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
                   /* dont need to add post data here, we won't handle it,
                    * if there is any strange site do this way, will add it
                    **/
-                      parse.addPage(newurl, newPage);
-                      if (runtime_debug) break;
-                  }
-              } else {
-                  LOG.error(key + " failed to find nextpage url via regex " + regex);
+                  parse.addPage(newurl, newPage);
+                  if (runtime_debug) break;
               }
           }
       } catch ( MalformedPerl5PatternException pe ) {
@@ -853,6 +900,7 @@ public class CompanyParser implements Parser {
               expr = xpath.compile(schema.getL2_schema_for_joburl());
               String link = (String)((String) expr.evaluate(job, XPathConstants.STRING)).trim();
               if ( link.isEmpty() ) {
+                  LOG.warn(url + " failed to get any link via  " + schema.getL2_schema_for_joburl());
                   continue;
                   /* Danone case, the last page will have 7 job items, but some of them are empty */
               }
