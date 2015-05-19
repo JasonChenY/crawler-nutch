@@ -1,7 +1,8 @@
 {
     "company" : "Lenovo",
     "l1_url" : "http://www.lenovocareers.com/zh-cn/search-results?countryid=46&cntry=china&city=-1&category=-1&keywords=&datePosted=7&zipCode=&radius=50",
-    "cookie": "BIGipServersitecore_pool=3514960394.20480.0000; session=u1yeef1tt00szalzd5tyxdsc; s_nr=1431709265804; __utmt=1; lenovo.findly.1#lang=zh-CN; SelectedCountry=China; s_cc=true; __utma=29065249.178641404.1431708921.1431713719.1431721141.3; __utmb=29065249.5.10.1431721141; __utmc=29065249; __utmz=29065249.1431708921.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __atuvc=33%7C19; __atuvs=555654b4a6194340004; s_fid=3548B030A3F49DBC-17DC03B86A5C6119; s_sq=%5B%5BB%5D%5D; SelectedLanguage=zh-cn",
+    "comment:cookie": "need inject cookie, but just need part of them, can get session dynamically",
+    "cookie": "lenovo.findly.1#lang=zh-CN; SelectedCountry=China; SelectedLanguage=zh-cn",
     "page_list" : {
         "l2_template_for_nextpage_url" : "http://www.lenovocareers.com/zh-cn/search-results?countryid=46&cntry=china&city=-1&category=-1&keywords=&datePosted=7&zipCode=&radius=50",
         "l2_nextpage_method" : "POST",

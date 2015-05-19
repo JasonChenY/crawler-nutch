@@ -1,0 +1,13 @@
+上海=Shanghai
+北京=Beijing
+深圳=Shenzhen
+杭州=Hangzhou
+西安=Xian
+成都=Chengdou
+武汉=Wuhan
+南京=Nanjing
+无锡=Wuxi
+扬州=Yangzhou
+大连=Dalian
+香港=Hongkong
+重庆=Chongqing

@@ -178,7 +178,7 @@ public class HttpResponse implements Response {
         try {
         /* cookie handling */
             if ( !page.getMetadata().containsKey(CompanyUtils.company_cookie) ) {
-                if ( true /* CompanyUtils.isEntryLink(page) */) {
+                if ( CompanyUtils.isEntryLink(page) || schema.getCookieType().equals("static") ) {
                     if ( !schema.getCookie().isEmpty() ) {
                      /* for site like microsoft, customer can configure cookie not expired?
                      * otherwise, send the request without cookie, server will return a new cookie
@@ -269,8 +269,8 @@ public class HttpResponse implements Response {
                 page.getHeaders().put(new Utf8(key), new Utf8(headers.get(key)));
             }
 
-            if ( schema.getCookie().isEmpty() ) {
-      /* save the cookies into pages, only if no cookie configured in schema */
+            if ( !schema.getCookieType().equals("static") ) {
+      /* save the cookies into pages, only if no static cookie configured in schema */
                 final ByteArrayOutputStream outbuffer = new ByteArrayOutputStream();
                 final ObjectOutputStream outstream = new ObjectOutputStream(outbuffer);
                 outstream.writeObject(this.cookieStore);

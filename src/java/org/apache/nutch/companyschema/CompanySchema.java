@@ -19,6 +19,9 @@ package org.apache.nutch.companyschema;
 public class CompanySchema {
     private String name;
     private String cookie;
+    /* "static" always use cookied configured in schema,
+    should update with cookie get dynamically (Microsoft)*/
+    private String cookieType;
 
     private String l1_url;
     private String l1_method;
@@ -62,6 +65,7 @@ public class CompanySchema {
     public CompanySchema(String n) {
         setName(n);
         setCookie("");
+        setCookieType("");
         setL1_url("");
         setL1_method("GET");
         setL1_postdata("");
@@ -109,6 +113,12 @@ public class CompanySchema {
 
     public void setCookie(String cookie) {
         if (cookie != null) this.cookie = cookie;
+    }
+
+    public String getCookieType() { return cookieType; }
+
+    public void setCookieType(String cookieType) {
+        if (cookieType != null) this.cookieType = cookieType;
     }
 
     public String getL1_url() {
@@ -344,6 +354,7 @@ public class CompanySchema {
     public void print() {
         System.out.println("name : " + name);
         System.out.println("cookie : " + cookie);
+        System.out.println("cookieType : " + cookieType);
         System.out.println("l1_url : " + l1_url);
         System.out.println("l1_method : " + l1_method);
         System.out.println("l1_postdata : " + l1_postdata);

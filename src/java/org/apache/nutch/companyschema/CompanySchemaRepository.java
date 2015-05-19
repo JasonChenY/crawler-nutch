@@ -110,6 +110,7 @@ public class CompanySchemaRepository {
 
           CompanySchema companySchema = new CompanySchema(name);
           companySchema.setCookie((String) json.get("cookie"));
+          companySchema.setCookieType((String) json.get("cookieType"));
           companySchema.setL1_url((String) json.get("l1_url"));
           companySchema.setL1_method((String) json.get("l1_method"));
           companySchema.setL1_postdata((String) json.get("l1_postdata"));
