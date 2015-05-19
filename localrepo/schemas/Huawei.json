@@ -10,7 +10,7 @@
           "l2_schema_for_jobs" : "$.result",
           "l2_template_for_joburl" : "http://career.huawei.com/recruitment/services/portal/portalpub/getJobDetail?jobId=123456",
           "l2_template_for_joburl_repr": "http://career.huawei.com/recruitment/joinUs.html#?jobId=123456",
-          "l2_joburl_regex" : "/(.*jobId=)(\\d+)(.*)/",
+          "l2_joburl_regex" : "s/(.*jobId=)(\\d+)(.*)/$1-deadbeaf-$3/g",
           "l2_schema_for_joburl" : "jobId",
           "l2_job_title" : "jobname",
           "l2_job_location" : "jobArea",

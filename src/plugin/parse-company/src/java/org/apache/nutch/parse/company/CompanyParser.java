@@ -720,7 +720,7 @@ public class CompanyParser implements Parser {
           return parse;
       }
   }
-  private String generate_regex_for_nextitem(String regex, int index) {
+  private String generate_regex_for_nextitem(String regex, String substitute) {
       /* this help function is for generating regex from schema file, e.g
       "l2_nextpage_regex" : "s/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/$1-deadbeaf-$3-deadbeaf-$5/g",
       this is to regplace "-deadbeaf-" to index nubmer,
@@ -729,8 +729,7 @@ public class CompanyParser implements Parser {
          3rd page: "s/(.*SearchResult_)(\\d+)(.*__EVENTTARGET=ViewJob_)(\\2)(.*)/$1\\3$3\\3$5/g",
       why using strange "-deadbeaf-" is to avoid any possible string in original regex.
        */
-      String indexString = Integer.toString(index);
-      String newregex = regex.replaceAll("-deadbeaf-", "\\\\"+indexString);
+      String newregex = regex.replaceAll("-deadbeaf-", "\\\\"+substitute);
       /* this can be extended with again Perl5 Regex later if necessary for other usecases */
       return newregex;
   }
@@ -801,7 +800,7 @@ public class CompanyParser implements Parser {
               int start = get_startitem_from_regex(regex, l2_postdata);
 
               for (int i = start; i <= last; i += incr) {
-                  String newregex = generate_regex_for_nextitem(regex, i);
+                  String newregex = generate_regex_for_nextitem(regex, Integer.toString(i));
                   String newpostdata = plUtil.substitute(newregex, l2_postdata);
                   /* hbase use url as the key, but we will generate series of webpage with same key value,
                    * adding a trailing stuff, and remember to remove it in fetcher/protolcol-http4,
@@ -826,7 +825,7 @@ public class CompanyParser implements Parser {
               /* normal case where next page is a href, can generate list of new urls basing on pattern */
               int start = get_startitem_from_regex(regex, page_list_url);
               for (int i = start; i <= last; i += incr) {
-                  String newregex = generate_regex_for_nextitem(regex, i);
+                  String newregex = generate_regex_for_nextitem(regex, Integer.toString(i));
                   String newurl = plUtil.substitute(newregex, page_list_url);
                   if ( LOG.isDebugEnabled() ) {
                       LOG.debug(newurl + " from regex " + newregex + " : " + regex);
@@ -867,33 +866,14 @@ public class CompanyParser implements Parser {
               parse = new Parse("job list", "job list", new Outlink[0], status);
           }
 
-          String prefix="";
-          String suffix="";
           if ( !schema.getL2_template_for_joburl().isEmpty() ) {
               /* till now didn't see this case yet, just port Alibaba Json case to HTML */
-              String l2_template_for_joburl = schema.getL2_template_for_joburl();
-              LOG.warn(url + " (Abnormal case? ) joburl tempate: " + l2_template_for_joburl);
-
-              String regex = schema.getL2_joburl_regex();
-              if ( regex.isEmpty() ) {
-                  LOG.warn(url + " template defined without regex: " + l2_template_for_joburl);
-              } else {
-                  try {
-                      Perl5Util plUtil = new Perl5Util();
-                      PatternMatcherInput matcherInput = new PatternMatcherInput(l2_template_for_joburl);
-                      if (plUtil.match(regex, matcherInput)) {
-                          MatchResult result = plUtil.getMatch();
-                          prefix = result.group(1);
-                          if (result.groups() > 3) suffix = result.group(3);
-                      } else {
-                          LOG.warn(url + " failed to match with regex " + regex);
-                      }
-                  } catch (MalformedPerl5PatternException pe) {
-                      LOG.warn(url + " failed to compile regex " + regex, pe);
-                  }
+              LOG.warn(url + " (Abnormal case? ) joburl tempate: " + schema.getL2_template_for_joburl());
+              if (schema.getL2_joburl_regex().isEmpty()) {
+                  LOG.warn(url + " template defined without regex");
               }
           }
-
+          Perl5Util plUtil = new Perl5Util();
           for ( int i = 0; i < jobs.getLength(); i++ ) {
               Element job = (Element)jobs.item(i);
 
@@ -904,8 +884,10 @@ public class CompanyParser implements Parser {
                   continue;
                   /* Danone case, the last page will have 7 job items, but some of them are empty */
               }
-
-              link = prefix + link + suffix;
+              if ( !schema.getL2_template_for_joburl().isEmpty() && !schema.getL2_joburl_regex().isEmpty() ) {
+                  String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), link);
+                  link = plUtil.substitute(newregex, schema.getL2_template_for_joburl());
+              }
 
               LOG.debug(url + " contain link: " + link);
               String target = guess_URL(link, url, schema.getL1_url());
@@ -915,13 +897,16 @@ public class CompanyParser implements Parser {
                   expr = xpath.compile(schema.getL2_schema_for_joburl_repr());
                   l2_joburl_repr = (String) ((String) expr.evaluate(job, XPathConstants.STRING)).trim();
                   l2_joburl_repr = guess_URL(l2_joburl_repr, url, schema.getL1_url());
-              }
-              if ( !schema.getL2_template_for_joburl_repr().isEmpty() ) {
+                  if ( !schema.getL2_template_for_joburl_repr().isEmpty() && !schema.getL2_joburl_regex().isEmpty() ) {
                   /* Till now didn't see repr url need to be replaced with regex yet,
                    * only hit this for Huawei/Json case, will consider this if necessary later
                    * In general this should not happen, because repr urls are extraced from HTML href here,
                    * it is unreasonable to have a webpage with href again to be replaced.
                    */
+                      String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), l2_joburl_repr);
+                      l2_joburl_repr = plUtil.substitute(newregex, schema.getL2_template_for_joburl_repr());
+                  }
+                  l2_joburl_repr = guess_URL(l2_joburl_repr, url, schema.getL1_url());
               }
 
               expr = xpath.compile(schema.getL2_job_title());
@@ -1077,56 +1062,25 @@ public class CompanyParser implements Parser {
           Configuration configuration = Configuration.builder().options(Option.SUPPRESS_EXCEPTIONS).build();
           JsonPath.parse(SIMPLE_MAP, configuration).read("$.not-found");
           */
-      String prefix="";
-      String suffix="";
 
-      String l2_template_for_joburl = schema.getL2_template_for_joburl();
-      if ( !l2_template_for_joburl.isEmpty() ) {
-          LOG.debug(url + " l2_template_for_joburl: " + l2_template_for_joburl);
-
-          String regex = schema.getL2_joburl_regex();
-          try {
-              Perl5Util plUtil = new Perl5Util();
-              PatternMatcherInput matcherInput = new PatternMatcherInput(l2_template_for_joburl);
-              if ( plUtil.match(regex, matcherInput)) {
-                  MatchResult result = plUtil.getMatch();
-                  prefix = result.group(1);
-                  if (result.groups() > 3) suffix = result.group(3);
-              } else {
-                  LOG.warn(url + " failed to match with regex " + regex);
-              }
-          } catch ( MalformedPerl5PatternException pe ) {
-              LOG.warn(url + " failed to compile regex " + regex);
+      if ( !schema.getL2_template_for_joburl().isEmpty() ) {
+          LOG.debug(url + " l2_template_for_joburl: " + schema.getL2_template_for_joburl());
+          if ( schema.getL2_joburl_regex().isEmpty() ) {
+              LOG.warn(url + " l2_template_for_joburl defined without l2_joburl_regex");
           }
       } else {
           /* no such case */
+          LOG.warn(url + " json page without l2_template_for_joburl configured ");
       }
 
-      /* HuaWei case, real job url should also be replaced */
-      String prefix_repr="";
-      String suffix_repr="";
-      String l2_template_for_joburl_repr = schema.getL2_template_for_joburl_repr();
-      if ( !l2_template_for_joburl_repr.isEmpty() ) {
-          LOG.debug(url + " l2_template_for_joburl_repr: " + l2_template_for_joburl_repr);
-
-          String regex = schema.getL2_joburl_regex();
-          try {
-              Perl5Util plUtil = new Perl5Util();
-              PatternMatcherInput matcherInput = new PatternMatcherInput(l2_template_for_joburl_repr);
-              if ( plUtil.match(regex, matcherInput)) {
-                  MatchResult result = plUtil.getMatch();
-                  prefix_repr = result.group(1);
-                  if (result.groups() > 3) suffix_repr = result.group(3);
-              } else {
-                  LOG.warn(url + " failed to match with regex " + regex);
-              }
-          } catch ( MalformedPerl5PatternException pe ) {
-              LOG.warn(url + " failed to compile regex " + regex);
+      if ( !schema.getL2_template_for_joburl_repr().isEmpty() ) {
+          /* HuaWei case, real job url should also be replaced */
+          LOG.debug(url + " l2_template_for_joburl_repr: " + schema.getL2_template_for_joburl_repr());
+          if ( schema.getL2_joburl_regex().isEmpty() ) {
+              LOG.warn(url + " l2_template_for_joburl_repr defined without l2_joburl_regex");
           }
-      } else {
-          /* no such case */
       }
-
+      Perl5Util plUtil = new Perl5Util();
       for ( int i = 0; i < jobs.size(); i++ ) {
               /*
                * Dont use this old way, it will always try to cast to some type, which we not know in code
@@ -1142,14 +1096,18 @@ public class CompanyParser implements Parser {
               continue;
           }
 
+          if ( !schema.getL2_template_for_joburl().isEmpty() && !schema.getL2_joburl_regex().isEmpty() ) {
+              String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), newurl);
+              newurl = plUtil.substitute(newregex, schema.getL2_template_for_joburl());
+          }
+
           /*Dont use format even though it is convenient,
           * because not sure any site carry invalid url for format,
           * aiming for a consistent regex handling as l2 pageurl/postdata
           * String link = String.format(l2_template_for_joburl, newurl);
           */
-          String link = prefix + newurl + suffix;
-          LOG.debug(url + " contain link: " + link);
-          String target = guess_URL(link, url, schema.getL1_url());
+          LOG.debug(url + " contain link: " + newurl);
+          String target = guess_URL(newurl, url, schema.getL1_url());
 
           String pattern_title = pattern_prefix + "." + schema.getL2_job_title();
           String title = doc.read(pattern_title, String.class);
@@ -1170,20 +1128,25 @@ public class CompanyParser implements Parser {
               date = DateUtils.getCurrentDate();
           }
 
-          /* No real case for this yet, just porting from Danone/HTML to here */
           String newurl_repr = "";
           if ( !schema.getL2_schema_for_joburl_repr().isEmpty() ) {
-              String pattern_url_repr = pattern_prefix + "." + schema.getL2_schema_for_joburl_repr();
-              newurl_repr = doc.read(pattern_url_repr, String.class);
-              newurl_repr = guess_URL(newurl_repr, url, schema.getL1_url());
-          }
-
           /*HuaWei case, real job url should also be replaced basing on template with regex
           * Now we assume should be the same regex,
           * it is possible need to be changed later with another regex for other company
           * */
-          if ( !schema.getL2_template_for_joburl_repr().isEmpty() ) {
-              newurl_repr = prefix_repr + newurl + suffix_repr;
+              String pattern_url_repr = pattern_prefix + "." + schema.getL2_schema_for_joburl_repr();
+              newurl_repr = doc.read(pattern_url_repr, String.class);
+
+              if ( !schema.getL2_template_for_joburl_repr().isEmpty() && !schema.getL2_joburl_regex().isEmpty() ) {
+                  /* Till now didn't see repr url need to be replaced with regex yet,
+                   * only hit this for Huawei/Json case, will consider this if necessary later
+                   * In general this should not happen, because repr urls are extraced from HTML href here,
+                   * it is unreasonable to have a webpage with href again to be replaced.
+                   */
+                  String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), newurl_repr);
+                  newurl_repr = plUtil.substitute(newregex, schema.getL2_template_for_joburl_repr());
+              }
+
               newurl_repr = guess_URL(newurl_repr, url, schema.getL1_url());
           }
 
