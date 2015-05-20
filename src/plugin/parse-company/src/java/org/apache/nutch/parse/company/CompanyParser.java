@@ -531,9 +531,14 @@ public class CompanyParser implements Parser {
       /* Next Page URL */
       String nextpage_url = schema.getL2_template_for_nextpage_url();
       if ( nextpage_url.isEmpty() ) {
-          expr = xpath.compile(schema.getL2_schema_for_nextpage_url());
-          nextpage_url = (String) expr.evaluate(doc, XPathConstants.STRING);
-          LOG.debug(url + " (Normal case) Got nextpage url: " + nextpage_url);
+          if ( !schema.getL2_schema_for_nextpage_url().isEmpty() ) {
+              expr = xpath.compile(schema.getL2_schema_for_nextpage_url());
+              nextpage_url = (String) expr.evaluate(doc, XPathConstants.STRING);
+              LOG.debug(url + " (Normal case) Got nextpage url: " + nextpage_url);
+          } else {
+              LOG.debug(url + " (Goldmansachs?) Not template_for_nextpage_url and schema_for_nextpage_url");
+              return null;
+          }
       } else {
           LOG.debug(url + " (Normal case) use l2_template_for_nextpage_url instead of l2_schema_for_nextpage_url");
       }

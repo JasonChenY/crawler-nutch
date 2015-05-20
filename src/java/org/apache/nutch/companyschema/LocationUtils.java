@@ -59,7 +59,6 @@ public class LocationUtils {
             /* it is fortunate that all the china city won't have this word in base name */
             replaces.add(new BasicNameValuePair(new String("市".getBytes(), "UTF-8"), ""));
             replaces.add(new BasicNameValuePair(new String("'".getBytes(), "UTF-8"), ""));
-            replaces.add(new BasicNameValuePair(new String("hong kong".getBytes(), "UTF-8"), new String("香港".getBytes(), "UTF-8")));
             /* is it a good idea to translate all english to chinese city name here
              * will be too slow, need find a better way, find tokenized word from hash?
              */

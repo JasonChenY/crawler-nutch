@@ -56,7 +56,7 @@ fi
 if [ -z $__id ]; then
    __id="WebPages"
 fi
-if [ -z $solr ]; then
+if [ -z $__solr ]; then
    __solr="http://127.0.0.1:8080/solr"
 fi
 if [ -z $__limit ]; then

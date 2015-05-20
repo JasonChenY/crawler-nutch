@@ -1,0 +1,15 @@
+{ 
+    "company" : "Goldmansachs",
+    "l1_url" : "http://www.goldmansachs.com/a/data/jobs/asia_except_japan.html",
+    "job_list" : {
+          "l2_schema_for_jobs" : "//TABLE[@class='searchListing']/TBODY/TR[@class!='hidden']",
+          "l2_schema_for_joburl": "./TH[@scope='row']/A/@href",
+          "l2_job_title": "./TH[@scope='row']/A/text()",
+          "l2_job_location": "./TD[2]/text()",
+          "l2_job_date": "./TD[3]/text()",
+    },
+    "job": {
+          "l3_job_description":"//DIV[@id='content']/SECTION/ARTICLE",
+    }
+}
+

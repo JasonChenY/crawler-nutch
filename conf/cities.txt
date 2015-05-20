@@ -9,5 +9,5 @@
 无锡=Wuxi
 扬州=Yangzhou
 大连=Dalian
-香港=Hongkong
+香港=Hongkong, Hong Kong
 重庆=Chongqing
