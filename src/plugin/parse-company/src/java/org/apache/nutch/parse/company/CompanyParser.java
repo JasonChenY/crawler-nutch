@@ -984,8 +984,10 @@ public class CompanyParser implements Parser {
                 MatchResult result = plUtil.getMatch();
 
                 String title = "";
-                if (!schema.getL2_job_title().isEmpty())
+                if (!schema.getL2_job_title().isEmpty()) {
                     title = extract_matcher_groups(result, schema.getL2_job_title());
+                    title = EncodeUtils.rawdecode(title, "UTF-8"); /* some job has a '&' inside it */
+                }
 
                 String date = "";
                 if (!schema.getL2_job_date().isEmpty()) {
@@ -1231,7 +1233,7 @@ public class CompanyParser implements Parser {
                 if (!schema.getL3_job_description().isEmpty()) {
                     l3_description = extract_matcher_groups(result, schema.getL3_job_description());
                     //l3_description = URLDecoder.decode(l3_description, "utf-8");
-                    l3_description = EncodeUtils.urldecode(l3_description, "UTF-8", false);
+                    l3_description = EncodeUtils.rawdecode(l3_description, "UTF-8");
                 }
             } else {
                 LOG.warn(url + " failed to match job description");

@@ -1,5 +1,6 @@
 package org.apache.nutch.companyschema;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -12,6 +13,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 import java.nio.charset.Charset;
+import java.io.InputStream;
+import java.lang.CharSequence;
 
 public class EncodeUtils {
     private static final String PARAMETER_SEPARATOR = "&";
@@ -25,6 +28,46 @@ public class EncodeUtils {
     private static final BitSet RESERVED = new BitSet(256);
     private static final BitSet URLENCODER = new BitSet(256);
     private static final int RADIX = 16;
+
+    public static String rawdecode(String content, String cs) {
+        Charset charset = Charset.forName(cs);
+        if(content == null) {
+            return null;
+        } else {
+            byte[] bytes = content.getBytes();
+
+            ByteBuffer bb = ByteBuffer.allocate(content.length()*2);;
+            for ( int i = 0; i < bytes.length; i++ ) {
+                byte c = bytes[i];
+
+                if(c == 37 && ((i+2)<bytes.length) ) {
+                    byte uc = bytes[i+1];
+                    byte lc = bytes[i+2];
+                    if ( uc == '2' && (   lc == '0' || lc == '2' || lc == '3' || lc == '4'
+                                       || lc == '6' || lc == '7' || lc == 'B'|| lc == 'C' )
+                      || uc == '3' && (   lc == 'A' || lc == 'B' || lc == 'C' || lc == 'D'
+                            || lc == 'E' || lc == 'F'  ) ) {
+                        byte high = (byte)(uc - '0');
+                        byte low = (byte)(lc > 'A' ? lc - 'A' + 10 : lc - '0');
+                        byte ascii = (byte)(high * 16 + low);
+                        bb.put(ascii);
+                        i += 2;
+                    } else if ( uc == '0' && lc == 'A'
+                            ||  uc == '5' && lc == 'C') {
+                        // eat it
+                        i += 2;
+                    } else {
+                        bb.put((byte)37);
+                    }
+                } else {
+                    bb.put((byte)c);
+                }
+            }
+
+            bb.flip();
+            return charset.decode(bb).toString();
+        }
+    }
 
     public static String urldecode(String content, String cs, boolean plusAsBlank) {
         Charset charset = Charset.forName(cs);

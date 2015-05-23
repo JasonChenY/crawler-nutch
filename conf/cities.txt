@@ -2,7 +2,7 @@
 北京=Beijing
 深圳=Shenzhen
 杭州=Hangzhou
-西安=Xian
+西安=Xian, Xi an
 成都=Chengdou
 武汉=Wuhan
 南京=Nanjing
@@ -12,3 +12,11 @@
 香港=Hongkong, Hong Kong
 重庆=Chongqing
 广州=Guangzhou
+苏州=Suzhou
+厦门=Xiamen
+福建=Fujian
+沈阳=Shenyang
+天津=Tianjing
+珠海=Zhuhai
+城都=Chengdou
+
