@@ -125,6 +125,7 @@ public class CompanySchemaRepository {
               companySchema.setL2_nextpage_regex((String) page_list.get("l2_nextpage_regex"));
               companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
               companySchema.setL2_last_page((String) page_list.get("l2_last_page"));
+              companySchema.setL2_regex_matcher_for_jobnbr((String) page_list.get("l2_regex_matcher_for_jobnbr"));
 
               companySchema.setL2_nextpage_postdata_inherit_regex((String) page_list.get("l2_nextpage_postdata_inherit_regex"));
               companySchema.setL2_nextpage_endflag((String) page_list.get("l2_nextpage_endflag"));
@@ -133,6 +134,7 @@ public class CompanySchemaRepository {
           JSONObject job_list = (JSONObject)json.get("job_list");
           if ( job_list != null ) {
               companySchema.setL2_schema_for_jobs((String) job_list.get("l2_schema_for_jobs"));
+              companySchema.setL2_regex_matcher_for_jobs((String) job_list.get("l2_regex_matcher_for_jobs"));
               companySchema.setL2_template_for_joburl((String) job_list.get("l2_template_for_joburl"));
               companySchema.setL2_template_for_joburl_repr((String) job_list.get("l2_template_for_joburl_repr"));
               companySchema.setL2_joburl_regex((String) job_list.get("l2_joburl_regex"));
@@ -149,10 +151,12 @@ public class CompanySchemaRepository {
               companySchema.setL3_job_title((String) job.get("l3_job_title"));
               companySchema.setL3_job_date((String) job.get("l3_job_date"));
               companySchema.setL3_job_description((String) job.get("l3_job_description"));
+              companySchema.setL3_regex_matcher_for_job((String) job.get("l3_regex_matcher_for_job"));
           }
 
           companySchema.setJob_date_format((String) json.get("job_date_format"));
           companySchema.setJob_location_format_regex((String) json.get("job_location_format_regex"));
+          companySchema.setJob_regex_matcher_for_location((String) json.get("job_regex_matcher_for_location"));
 
           return companySchema;
       } catch (Exception e) {

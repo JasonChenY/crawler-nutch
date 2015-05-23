@@ -72,9 +72,15 @@
 </property>
 
 <property>
-  <name>runtime.debug</name>
+  <name>debug.fetch.single.item</name>
   <value>false</value>
   <description>if turned on, will only generate one more list page, and extract 1 job on each list page</description>
+</property>
+
+<property>
+    <name>debug.save.page.content</name>
+    <value>true</value>
+    <description>if turned on, will save the fetched content, html or pdf into /tmp directory for trouble shooting</description>
 </property>
 
 <property>
@@ -106,6 +112,12 @@
             --fetches in the cmd line is total urls to be fetched on per slave nodes
             This can be used as a simple mechanism to balance multithreads among companies, but can't solve the problem completely.
     </description>
+</property>
+
+<property>
+    <name>fetch.first.n.pages</name>
+    <value>5</value>
+    <description>Only fetch first n Pages for each company, -1: all pages. </description>
 </property>
 
 </configuration>

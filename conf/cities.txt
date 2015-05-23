@@ -11,3 +11,4 @@
 大连=Dalian
 香港=Hongkong, Hong Kong
 重庆=Chongqing
+广州=Guangzhou

@@ -35,10 +35,17 @@ public class CompanySchema {
     private String l2_nextpage_regex;
     private String l2_nextpage_increment;
     private String l2_last_page;
+    /* Oracle case, where no last page, only total number of page in an special format string,
+       Using regex to generate the Math string, then in code to calcuate the total page number.
+     */
+    private String l2_regex_matcher_for_jobnbr;
 
     /* fields for Microsoft kind of site */
     private String l2_nextpage_postdata_inherit_regex;
     private String l2_nextpage_endflag;
+
+    /* Oracle Case, where we cannt get list of jobs via XPATH, instead via regex matcher */
+    private String l2_regex_matcher_for_jobs;
 
     private String l2_schema_for_jobs;
     private String l2_template_for_joburl;
@@ -56,11 +63,15 @@ public class CompanySchema {
     /* field for Danone, job post date in l3 pdf file */
     private String l3_job_date;
     private String l3_job_description;
+    private String l3_regex_matcher_for_job; /* Oracle */
 
     /* field for dateformat, this will be applied to either l2(Ericsson) or l3(Danone)*/
     private String job_date_format;
     /* mainly for Huawei's  country-province-city or country-city- format */
     private String job_location_format_regex;
+    /* for Oracle case: Difficult to handle it in one match-replacer statement:
+    IN-IN,India-Hyderabad, SG-SG,Singapore-Singapore, CN-CN,China-Dalian, AU-AU,Australia-Sydney */
+    private String job_regex_matcher_for_location;
 
     public CompanySchema(String n) {
         setName(n);
@@ -78,10 +89,12 @@ public class CompanySchema {
         setL2_nextpage_regex("");
         setL2_nextpage_increment("1");
         setL2_last_page("");
+        setL2_regex_matcher_for_jobnbr("");
 
         setL2_nextpage_postdata_inherit_regex("");
         setL2_nextpage_endflag("");
 
+        setL2_regex_matcher_for_jobs("");
         setL2_schema_for_jobs("");
         setL2_template_for_joburl("");
         setL2_template_for_joburl_repr("");
@@ -96,9 +109,11 @@ public class CompanySchema {
         setL3_job_title("");
         setL3_job_date("");
         setL3_job_description("");
+        setL3_regex_matcher_for_job("");
 
         setJob_date_format("");
         setJob_location_format_regex("");
+        setJob_regex_matcher_for_location("");
     }
 
     public String getName() {
@@ -215,6 +230,14 @@ public class CompanySchema {
         if (l2_last_page != null) this.l2_last_page = l2_last_page;
     }
 
+    public String getL2_regex_matcher_for_jobnbr() {
+        return l2_regex_matcher_for_jobnbr;
+    }
+
+    public void setL2_regex_matcher_for_jobnbr(String l2_regex_matcher_for_jobnbr) {
+        if (l2_regex_matcher_for_jobnbr != null) this.l2_regex_matcher_for_jobnbr = l2_regex_matcher_for_jobnbr;
+    }
+
     public String getL2_nextpage_postdata_inherit_regex() {
         return l2_nextpage_postdata_inherit_regex;
     }
@@ -229,6 +252,14 @@ public class CompanySchema {
 
     public void setL2_nextpage_endflag(String l2_nextpage_endflag) {
         if (l2_nextpage_endflag != null) this.l2_nextpage_endflag = l2_nextpage_endflag;
+    }
+
+    public String getL2_regex_matcher_for_jobs() {
+        return l2_regex_matcher_for_jobs;
+    }
+
+    public void setL2_regex_matcher_for_jobs(String l2_regex_matcher_for_jobs) {
+        if (l2_regex_matcher_for_jobs != null) this.l2_regex_matcher_for_jobs = l2_regex_matcher_for_jobs;
     }
 
     public String getL2_schema_for_jobs() {
@@ -335,6 +366,14 @@ public class CompanySchema {
         if (l3_job_description != null) this.l3_job_description = l3_job_description;
     }
 
+    public String getL3_regex_matcher_for_job() {
+        return l3_regex_matcher_for_job;
+    }
+
+    public void setL3_regex_matcher_for_job(String l3_regex_matcher_for_job) {
+        if (l3_regex_matcher_for_job != null) this.l3_regex_matcher_for_job = l3_regex_matcher_for_job;
+    }
+
     public String getJob_date_format() {
         return job_date_format;
     }
@@ -349,6 +388,14 @@ public class CompanySchema {
 
     public void setJob_location_format_regex(String job_location_format_regex) {
         if (job_location_format_regex != null) this.job_location_format_regex = job_location_format_regex;
+    }
+
+    public String getJob_regex_matcher_for_location() {
+        return job_regex_matcher_for_location;
+    }
+
+    public void setJob_regex_matcher_for_location(String job_regex_matcher_for_location) {
+        if (job_regex_matcher_for_location != null) this.job_regex_matcher_for_location = job_regex_matcher_for_location;
     }
 
     public void print() {
@@ -367,10 +414,12 @@ public class CompanySchema {
         System.out.println("l2_nextpage_regex : " + l2_nextpage_regex);
         System.out.println("l2_nextpage_increment : " + l2_nextpage_increment);
         System.out.println("l2_last_page : " + l2_last_page);
+        System.out.println("l2_regex_matcher_for_jobnbr : " + l2_regex_matcher_for_jobnbr);
         System.out.println("  ");
         System.out.println("l2_nextpage_postdata_inherit_regex : " + l2_nextpage_postdata_inherit_regex);
         System.out.println("l2_nextpage_endflag : " + l2_nextpage_endflag);
         System.out.println("  ");
+        System.out.println("l2_regex_matcher_for_jobs : " + l2_regex_matcher_for_jobs);
         System.out.println("l2_schema_for_jobs : " + l2_schema_for_jobs);
         System.out.println("l2_template_for_joburl : " + l2_template_for_joburl);
         System.out.println("l2_template_for_joburl_repr : " + l2_template_for_joburl_repr);
@@ -385,9 +434,11 @@ public class CompanySchema {
         System.out.println("l3_job_title: " + l3_job_title);
         System.out.println("l3_job_date : " + l3_job_date);
         System.out.println("l3_job_description : " + l3_job_description);
+        System.out.println("l3_regex_matcher_for_job : " + l3_regex_matcher_for_job);
         System.out.println("  ");
         System.out.println("job_date_format : " + job_date_format);
         System.out.println("job_location_format_regex : " + job_location_format_regex);
+        System.out.println("job_regex_matcher_for_location : " + job_regex_matcher_for_location);
     }
 }
 

@@ -31,6 +31,7 @@ import java.lang.Object;
 import java.lang.String;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.net.URLDecoder;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
@@ -45,6 +46,7 @@ import org.apache.nutch.companyschema.CompanySchemaRepository;
 import org.apache.nutch.companyschema.CompanyUtils;
 import org.apache.nutch.companyschema.DateUtils;
 import org.apache.nutch.companyschema.LocationUtils;
+import org.apache.nutch.companyschema.EncodeUtils;
 import org.apache.nutch.storage.Mark;
 import org.apache.nutch.util.*;
 import org.apache.nutch.util.Bytes;
@@ -130,6 +132,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import org.w3c.dom.NamedNodeMap;
 
+/* for math expression evaluator */
+import javax.script.ScriptEngineManager;
+import javax.script.ScriptEngine;
+import java.lang.Math;
+
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
       .getLogger("org.apache.nutch.parse.company");
@@ -152,7 +159,9 @@ public class CompanyParser implements Parser {
 
   private CompanySchemaRepository repo;
 
-  private boolean runtime_debug;
+  private boolean debug_fetch_single_item;
+  private boolean debug_save_page_content;
+  private int fetch_first_n_pages;
 
   private Signature sig;
 
@@ -293,7 +302,24 @@ public class CompanyParser implements Parser {
             child = child.getNextSibling();
         }
     }
-
+  public static void save_page_content(String url, String content_type,  WebPage page ) {
+      String origcontent = new String(page.getContent().array());
+      try {
+          String date = DateUtils.getThreadLocalDateFormat().format(new Date());
+          String suffix = ".html";
+          if ( content_type.equals("application/pdf") ) suffix = ".pdf";
+          String fname = "/tmp/" + date + suffix;
+          FileWriter fw = new FileWriter(fname, true);
+          BufferedWriter bw = new BufferedWriter(fw);
+          bw.write(origcontent);
+          bw.flush();
+          bw.close();
+          fw.close();
+          LOG.debug(url + " content saved to " + fname);
+      } catch (Exception ee) {
+          LOG.warn(url + " failed to save content to file " + ee.getMessage());
+      };
+  }
   public Parse getParse(String url, WebPage page) {
       Parse parse = null;
       String name = CompanyUtils.getCompanyName(page);
@@ -355,22 +381,8 @@ public class CompanyParser implements Parser {
           LOG.debug(url + " : " + content_type);
       }
 
-      if ( runtime_debug ) {
-          String origcontent = new String(page.getContent().array());
-          try {
-              String date = DateUtils.getThreadLocalDateFormat().format(new Date());
-              String suffix = ".html";
-              if ( content_type.equals("application/pdf") ) suffix = ".pdf";
-
-              FileWriter fw = new FileWriter("/tmp/" + date + suffix, true);
-              BufferedWriter bw = new BufferedWriter(fw);
-              bw.write(origcontent);
-              bw.flush();
-              bw.close();
-              fw.close();
-          } catch (Exception ee) {
-              LOG.warn(url + " failed to save debug file " + ee.getMessage());
-          };
+      if ( debug_save_page_content ) {
+          save_page_content(url, content_type, page);
       }
 
       if ( content_type.equals("application/pdf") ) {
@@ -455,11 +467,26 @@ public class CompanyParser implements Parser {
 
             if ( CompanyUtils.isEntryLink(page)) {
                 parse = getParse_entry_html(url, page, schema, doc, xpath);
-                parse = getParse_list_html(parse, url, page, schema, doc, xpath);
+                if ( !schema.getL2_schema_for_jobs().isEmpty() ) {
+                    parse = getParse_list_html(parse, url, page, schema, doc, xpath);
+                } else if ( !schema.getL2_regex_matcher_for_jobs().isEmpty() ) {
+                    /* Oracle Case, decode from raw content via regex */
+                    parse = getParse_list_rawregex(parse, url, page, schema);
+                }
             } else if ( CompanyUtils.isListLink(page)) {
-                parse = getParse_list_html(null, url, page, schema, doc, xpath);
+                if (!schema.getL2_schema_for_jobs().isEmpty()) {
+                    parse = getParse_list_html(null, url, page, schema, doc, xpath);
+                } else if ( !schema.getL2_regex_matcher_for_jobs().isEmpty() ) {
+                    /* Oracle Case, decode from raw content via regex */
+                    parse = getParse_list_rawregex(null, url, page, schema);
+                }
             } else if ( CompanyUtils.isSummaryLink(page)) {
-                parse = getParse_summary_html(url, page, schema, doc, xpath);
+                if ( !schema.getL3_regex_matcher_for_job().isEmpty() ) {
+                    /* Oracle Case, decode from raw content via regex */
+                    parse = getParse_summary_rawregex(url, page, schema);
+                } else {
+                    parse = getParse_summary_html(url, page, schema, doc, xpath);
+                }
             }
         } catch (SAXException e) {
           LOG.warn("Failed to parse " + url + " with DOMParser " + e.getMessage());
@@ -548,8 +575,8 @@ public class CompanyParser implements Parser {
        * Note not all company will have the last page number to iterate,
        * e.g Microsoft, if so, we fallback to 'click' on the 'Next' button
        * */
-      String last_page = schema.getL2_last_page();
-      if ( !last_page.isEmpty() ) {
+      if ( !schema.getL2_last_page().isEmpty() ) {
+          String last_page = schema.getL2_last_page();
           expr = xpath.compile(last_page);
           last_page = (String) expr.evaluate(doc, XPathConstants.STRING);
           LOG.debug(url + " Got last page: " + last_page);
@@ -560,6 +587,41 @@ public class CompanyParser implements Parser {
               LOG.error(url + " failed to parse last page");
               return null;
           }
+
+          return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
+      } else if ( !schema.getL2_regex_matcher_for_jobnbr().isEmpty() ) {
+          /* Oracle Case, can only get page number from total job numbers via regex, then math to get it */
+          int last = 0;
+          try {
+              Perl5Util plUtil = new Perl5Util();
+              String origcontent = new String(page.getContent().array());
+              PatternMatcherInput matcherInput = new PatternMatcherInput(origcontent);
+              if (plUtil.match(schema.getL2_regex_matcher_for_jobnbr(), matcherInput)) {
+                  MatchResult result = plUtil.getMatch();
+                  String jobnbr = result.group(1);
+
+                  LOG.debug("total job number string:" + jobnbr);
+                  /*ScriptEngineManager mgr = new ScriptEngineManager();
+                   ScriptEngine engine = mgr.getEngineByName("JavaScript");
+                   Double d = (Double)engine.eval(output);*/
+                  double d = Integer.parseInt(jobnbr) / 10;
+                  last = ((int) (Math.floor(d))) + 1;
+                  if (LOG.isDebugEnabled()) LOG.debug(url + " last page number: " + last);
+              } else {
+                  LOG.warn(url + " failed to match total job nbr via regex " + schema.getL2_regex_matcher_for_jobnbr());
+                  return null;
+              }
+          } catch ( MalformedPerl5PatternException me ) {
+              LOG.warn(url + " failed to decode total job nbr via regex", me);
+              return null;
+          } catch ( NumberFormatException ne ) {
+              LOG.warn(url + " failed to decode total job nbr via math expression", ne);
+              return null;
+          }
+          /*catch ( javax.script.ScriptException se ) {
+              LOG.warn(url + " failed to decode last page number via math expression", se);
+              return null;
+          }*/
 
           return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
       } else {
@@ -666,7 +728,7 @@ public class CompanyParser implements Parser {
               if so, how to get the current page number ? Stupid Honeywell.
                */
           }
-          if ( runtime_debug ) {
+          if ( debug_save_page_content ) {
               try {
                   String date = DateUtils.getThreadLocalDateFormat().format(new Date());
                   LOG.debug(url + " write generated post data to file /tmp/" + date);
@@ -676,14 +738,6 @@ public class CompanyParser implements Parser {
                   bw.flush();
                   bw.close();
                   fw.close();
-/*
-                  fw = new FileWriter("/tmp/" + date + ".html", true);
-                  bw = new BufferedWriter(fw);
-                  bw.write(origcontent);
-                  bw.flush();
-                  bw.close();
-                  fw.close();
-*/
               } catch (Exception ee) {
                   LOG.warn(url + " failed to generate post file " + ee.getMessage());
               };
@@ -772,6 +826,15 @@ public class CompanyParser implements Parser {
           throw e;
       }
   }
+  private boolean shouldStop(String key, int current) {
+      if (this.debug_fetch_single_item) {
+          LOG.debug(key + " debug_fetch_single_item enabled, stop further");
+          return true;
+      } else if (current >= this.fetch_first_n_pages) {
+          LOG.debug(key + " fetch_first_n_pages configured to " + fetch_first_n_pages + " stop further");
+          return true;
+      } else return false;
+  }
   private Parse generate_next_pages(String key, WebPage page, String page_list_url, CompanySchema schema, int last, float score) {
       Perl5Util plUtil = new Perl5Util();
 
@@ -804,6 +867,7 @@ public class CompanyParser implements Parser {
 
               int start = get_startitem_from_regex(regex, l2_postdata);
 
+              int fetched = 0;
               for (int i = start; i <= last; i += incr) {
                   String newregex = generate_regex_for_nextitem(regex, Integer.toString(i));
                   String newpostdata = plUtil.substitute(newregex, l2_postdata);
@@ -824,11 +888,14 @@ public class CompanyParser implements Parser {
                   newPage.getMetadata().put(CompanyUtils.company_dyn_data, ByteBuffer.wrap(newpostdata.getBytes()));
                   newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
                   parse.addPage(newurl, newPage);
-                  if (runtime_debug) break;
+
+                  fetched++;
+                  if (shouldStop(key, fetched)) break;
               }
           } else {
               /* normal case where next page is a href, can generate list of new urls basing on pattern */
               int start = get_startitem_from_regex(regex, page_list_url);
+              int fetched = 0;
               for (int i = start; i <= last; i += incr) {
                   String newregex = generate_regex_for_nextitem(regex, Integer.toString(i));
                   String newurl = plUtil.substitute(newregex, page_list_url);
@@ -846,7 +913,9 @@ public class CompanyParser implements Parser {
                    * if there is any strange site do this way, will add it
                    **/
                   parse.addPage(newurl, newPage);
-                  if (runtime_debug) break;
+
+                  fetched++;
+                  if ( shouldStop(key, fetched) ) break;
               }
           }
       } catch ( MalformedPerl5PatternException pe ) {
@@ -855,7 +924,135 @@ public class CompanyParser implements Parser {
       }
       return parse;
   }
+    /* This function is used to generate a combined string basing on schema configuration:
+     *  $1,$5
+     *  $2:$6
+     *  only replace $2 with stuff in previous Perl5 MatchResult, keep all the other thing impact.
+     */
+    public static String extract_matcher_groups(MatchResult src_matcher_result, String grps_regex) {
+        StringBuffer result = new StringBuffer();
+        try {
+            java.util.regex.Pattern pattern_for_grpstr = java.util.regex.Pattern.compile("\\$(\\d+)");
+            java.util.regex.Matcher matcher_for_grpstr = pattern_for_grpstr.matcher(grps_regex);
 
+            while (matcher_for_grpstr.find()) {
+                String grpstr = matcher_for_grpstr.group(1);
+                int grpid = Integer.parseInt(grpstr);
+                if ( src_matcher_result.group(grpid) != null )
+                    matcher_for_grpstr.appendReplacement(result,  src_matcher_result.group(grpid));
+                else
+                    matcher_for_grpstr.appendReplacement(result,  "");
+            }
+            matcher_for_grpstr.appendTail(result);
+        } catch (java.util.regex.PatternSyntaxException e) {
+            LOG.error("Failed to extract groups from MatchResult via: " + grps_regex, e);
+        }
+        return result.toString();
+    }
+    private static String extract_via_regex(String input, String regex, int grp) {
+        /* Only for extract one specific group id, items separated by ',' */
+        StringBuffer result = new StringBuffer();
+        Perl5Util plUtil = new Perl5Util();
+        PatternMatcherInput matcherInput = new PatternMatcherInput(input);
+        boolean firsttime = true;
+        while (plUtil.match(regex, matcherInput)) {
+            MatchResult matchresult = plUtil.getMatch();
+            String item = matchresult.group(grp);
+            if (item != null) {
+                if ( !firsttime ) result.append(",");
+                result.append(item);
+                firsttime = false;
+            }
+        }
+        return result.toString();
+    }
+
+    private Parse getParse_list_rawregex(Parse parse, String url, WebPage page, CompanySchema schema) {
+        String origcontent = new String(page.getContent().array());
+
+        int total = 0;
+        if ( parse == null ) {
+            ParseStatus status = ParseStatus.newBuilder().build();
+            status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+            parse = new Parse("job list", "job list", new Outlink[0], status);
+        }
+        try {
+            PatternMatcherInput matcherInput = new PatternMatcherInput(origcontent);
+            String regex = schema.getL2_regex_matcher_for_jobs();
+            Perl5Util plUtil = new Perl5Util();
+            while (plUtil.match(regex, matcherInput)) {
+                MatchResult result = plUtil.getMatch();
+
+                String title = "";
+                if (!schema.getL2_job_title().isEmpty())
+                    title = extract_matcher_groups(result, schema.getL2_job_title());
+
+                String date = "";
+                if (!schema.getL2_job_date().isEmpty()) {
+                    date = extract_matcher_groups(result, schema.getL2_job_date());
+                    date = DateUtils.formatDate(date, schema.getJob_date_format());
+                } else {
+                    date = DateUtils.getCurrentDate();
+                }
+
+                String location = "";
+                if (!schema.getL2_job_location().isEmpty()) {
+                    location = extract_matcher_groups(result, schema.getL2_job_location());
+                    if ( !schema.getJob_regex_matcher_for_location().isEmpty() ) {
+                        /* Oracle special case, difficult to handle with single match-replace statement,
+                         * IN-IN,India-Hyderabad, SG-SG,Singapore-Singapore, CN-CN,China-Dalian, AU-AU,Australia-Sydney
+                         * fallback to regex-matcher, then we assume only group 1 is needed,
+                         * it is possible to specify job_location_format_regex further.
+                         */
+                        location = extract_via_regex(location, schema.getJob_regex_matcher_for_location(), 1);
+                    }
+                    location = LocationUtils.format(location, schema.getJob_location_format_regex());
+                }
+
+                String newurl = "";
+                if (!schema.getL2_schema_for_joburl().isEmpty()) {
+                    newurl = extract_matcher_groups(result, schema.getL2_schema_for_joburl());
+                    newurl = URLDecoder.decode(newurl, "utf-8");
+                }
+
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug(total + "th job-> title: " + title + " date: " + date + " location: " + location + " url: " + url);
+                }
+
+                WebPage newPage = WebPage.newBuilder().build();
+                newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+                CompanyUtils.setCompanyName(newPage, CompanyUtils.getCompanyName(page));
+                CompanyUtils.setSummaryLink(newPage);
+
+                newPage.getMetadata().put(CompanyUtils.company_job_title, ByteBuffer.wrap(title.getBytes()));
+                newPage.getMetadata().put(CompanyUtils.company_job_location, ByteBuffer.wrap(location.getBytes()));
+                newPage.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(date.getBytes()));
+
+                newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+
+                newPage.setScore(page.getScore() / 10); /* lazy workaround */
+
+                newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
+
+                parse.addPage(newurl, newPage);
+
+                total++;
+
+                if (debug_fetch_single_item) {
+                    LOG.debug(url + " debug_fetch_single_item enabled, stop further");
+                    break;
+                }
+            }
+        } catch ( Exception e ) {
+            LOG.warn(url + " failed to decode jobs ", e);
+        }
+        if ( total == 0 ) {
+            LOG.info(url + " no jobs found ");
+        } else {
+            LOG.info(url + " Total " + total + " jobs extraced");
+        }
+        return parse;
+    }
   private Parse getParse_list_html(Parse parse, String url, WebPage page, CompanySchema schema, Document doc, XPath xpath)
       throws XPathExpressionException {
       XPathExpression expr = xpath.compile(schema.getL2_schema_for_jobs());
@@ -965,7 +1162,10 @@ public class CompanyParser implements Parser {
               }*/
               parse.addPage(target, newPage);
 
-              if ( runtime_debug ) break;
+              if (debug_fetch_single_item) {
+                  LOG.debug(url + " debug_fetch_single_item enabled, stop further");
+                  break;
+              }
           }
       }
       return parse;
@@ -1013,6 +1213,43 @@ public class CompanyParser implements Parser {
       Parse parse = new Parse(l3_description, l3_title, new Outlink[0], status);
       return parse;
   }
+
+    private Parse getParse_summary_rawregex(String url, WebPage page, CompanySchema schema) {
+        try {
+            String origcontent = new String(page.getContent().array());
+            String l3_title = "";
+            String l3_description = "";
+
+            PatternMatcherInput matcherInput = new PatternMatcherInput(origcontent);
+            String regex = schema.getL3_regex_matcher_for_job();
+            Perl5Util plUtil = new Perl5Util();
+
+            if (plUtil.match(regex, matcherInput)) { /* only match once */
+                MatchResult result = plUtil.getMatch();
+
+                /* can be extented to include l3_title, and l3_date if necessary later, not such case now */
+                if (!schema.getL3_job_description().isEmpty()) {
+                    l3_description = extract_matcher_groups(result, schema.getL3_job_description());
+                    //l3_description = URLDecoder.decode(l3_description, "utf-8");
+                    l3_description = EncodeUtils.urldecode(l3_description, "UTF-8", false);
+                }
+            } else {
+                LOG.warn(url + " failed to match job description");
+            }
+
+            LOG.info(url + " Title: " + l3_title +
+                    "\nDescription: " + ((l3_description.length() > 200) ? l3_description.substring(0, 200) : l3_description));
+
+            ParseStatus status = ParseStatus.newBuilder().build();
+            status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+            Parse parse = new Parse(l3_description, l3_title, new Outlink[0], status);
+            return parse;
+
+        } catch ( Exception e ) {
+            LOG.error("failed to decode l3 description via regex ", e);
+            return null;
+        }
+    }
 
   private Parse getParse_entry_json(String url, WebPage page, CompanySchema schema, DocumentContext doc)
       throws PathNotFoundException {
@@ -1221,7 +1458,10 @@ public class CompanyParser implements Parser {
           }
           parse.addPage(target, newPage);
 
-          if ( runtime_debug ) break;
+          if (debug_fetch_single_item) {
+              LOG.debug(url + " debug_fetch_single_item enabled, stop further");
+              break;
+          }
       }
 
       return parse;
@@ -1272,10 +1512,13 @@ public class CompanyParser implements Parser {
     this.defaultCharEncoding = getConf().get(
         "parser.character.encoding.default", "windows-1252");
     this.repo = CompanySchemaRepository.getInstance(conf.get("company.schema.dir", "./"));
-    this.runtime_debug = conf.getBoolean("runtime.debug", false);
+    this.debug_fetch_single_item = conf.getBoolean("debug.fetch.single.item", false);
     this.sig = SignatureFactory.getSignature(conf);
     this.try_to_shortcut_l3page = conf.getBoolean("try.to.shortcut.l3page", true);
     this.defaultInterval = conf.getInt("db.fetch.interval.default", 0);
+    this.fetch_first_n_pages = conf.getInt("fetch.first.n.pages", 5);
+    if ( this.fetch_first_n_pages < 0 ) this.fetch_first_n_pages = Integer.MAX_VALUE;
+    this.debug_save_page_content = conf.getBoolean("debug.save.page.content", false);
   }
 
   public Configuration getConf() {
