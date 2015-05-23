@@ -1,0 +1,25 @@
+{
+   "company" : "Cocacola",
+   "l1_url" : "http://careers.peopleclick.com/careerscp/client_cocacola/external/zh-cn/search.do",
+   "l1_method" : "POST",
+   "l1_postdata" : "functionName=search&com.peopleclick.cp.formdata.isAdvanced=false&locationcitycluster=FLD_JPM_COUNTRY&com.peopleclick.cp.formdata.JPM_DURATION=-1&com.peopleclick.cp.formdata.JPM_DURATION=&nonsearchable.FLD_JPM_COUNTRY=61&com.peopleclick.cp.formdata.FLD_JPM_COUNTRY=&com.peopleclick.cp.formdata.FLD_JPM_POSTING_CATEGORY=-1&com.peopleclick.cp.formdata.FLD_JPM_POSTING_CATEGORY=&nonsearchable.JPM_LOCATION=-1&com.peopleclick.cp.formdata.JPM_LOCATION=&com.peopleclick.cp.formdata.SEARCHCRITERIA_KEYWORDS=&com.peopleclick.cp.formdata.SEARCHCRITERIA_CLIENTREQID=&com.peopleclick.cp.formdata.SEARCHCRITERIA_ALLKEYWORDS=&com.peopleclick.cp.formdata.SEARCHCRITERIA_EXACTPHRASE=&com.peopleclick.cp.formdata.SEARCHCRITERIA_ANYKEYWORDS=&com.peopleclick.cp.formdata.SEARCHCRITERIA_WITHOUTKEYWORDS=&com.peopleclick.cp.formdata.LOCALECODE=-1&com.peopleclick.cp.formdata.LOCALECODE=&com.peopleclick.cp.formdata.hitsPerPage=10&input=%E6%90%9C%E7%B4%A2",
+   "cookie" : "JSESSIONID=8359292A395249D66F9F366892C52602-n1; __utmt_sys=1; __utmt_site=1; __utma=205741185.1468624275.1432407031.1432407031.1432407031.1; __utmb=205741185.18.10.1432407031; __utmc=205741185; __utmz=205741185.1432407031.1.1.utmcsr=note.youdao.com|utmccn=(referral)|utmcmd=referral|utmcct=/table/",
+   "cookieType" : "static",
+   "page_list" : {
+       "l2_template_for_nextpage_url" : "http://careers.peopleclick.com/careerscp/client_cocacola/external/zh-cn/search.do",
+       "l2_nextpage_method" : "POST",
+       "l2_template_for_nextpage_postdata" : "functionName=search&pageIndex=&com.peopleclick.cp.formdata.jobPost_76701_en-us=&com.peopleclick.cp.formdata.jobPost_76456_en-us=&com.peopleclick.cp.formdata.jobPost_76450_en-us=&com.peopleclick.cp.formdata.jobPost_76423_en-us=&com.peopleclick.cp.formdata.jobPost_76389_en-us=&com.peopleclick.cp.formdata.jobPost_76294_en-us=&com.peopleclick.cp.formdata.jobPost_76292_en-us=&com.peopleclick.cp.formdata.jobPost_76100_en-us=&com.peopleclick.cp.formdata.jobPost_76098_en-us=&com.peopleclick.cp.formdata.jobPost_76096_en-us=&PARAMFILTER%3AfunctionName%3Dsearch%7CpageIndex%3D2%7C=2",
+       "l2_nextpage_regex":"s/(.*pageIndex%3D)(\\d+)(%7C=)(\\2)/$1-deadbeaf-$3-deadbeaf-/g",
+       "l2_last_page"  : "substring-before(substring-after(//SPAN[@class='pc-rtg-pagination']/INPUT[@class='pc-rtg-navButton'][last()]/@name, 'PARAMFILTER:functionName=search|pageIndex='), '|')",
+   },
+   "job_list": {
+       "l2_schema_for_jobs" : "//TABLE[@id='searchResultsTable']/TBODY/TR[@class='pc-rtg-evenRow' or @class='pc-rtg-oddRow']",
+       "l2_schema_for_joburl" : "./TD[@class='pc-rtg-tableItem'][2]/A/@href",
+       "l2_job_title" : "./TD[@class='pc-rtg-tableItem'][2]/A/text()",
+       "l2_job_location" : "./TD[@class='pc-rtg-tableItem'][4]/text()",
+       "l2_job_date" : "./TD[@class='pc-rtg-tableItem'][5]/text()"
+   },
+   "job": {
+       "l3_job_description" : "//FORM[@name='jobDetails']/TABLE[4]",
+   }
+}
