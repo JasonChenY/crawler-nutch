@@ -1,0 +1,25 @@
+{ 
+   "company" : "Merck",
+   "l1_url" : "http://msdchina.51job.com/sc/job_list.php?begin=begin",
+   "l1_method" : "POST",
+   "l1_postdata" : "keywordtype=2&company=281453&jobarea=0000&funtype=0000&issuedate=30&keyword=%C7%EB%CA%E4%C8%EB%D6%B0%CE%BB%B9%D8%BC%FC%D7%D6&image.x=14&image.y=13",
+   "comment:cookie" : "CJobID=%2861613693%29",
+   "page_list" : {
+       "l2_template_for_nextpage_url" : "http://msdchina.51job.com/sc/job_list.php?begin=begin",
+       "l2_nextpage_method" : "POST",
+       "l2_template_for_nextpage_postdata" : "pages=21&keyword=%C7%EB%CA%E4%C8%EB%D6%B0%CE%BB%B9%D8%BC%FC%D7%D6&keywordtype=2&jobarea=&codivid=&company=281453&funtype=&issuedate=30&division=&poscode=&page=2",
+       "l2_nextpage_regex":"s/(.*page=)(\\d+)/$1-deadbeaf-/g",
+       "l2_nextpage_increment":"1",
+       "l2_last_page"  : "//INPUT[@name='pages']/@value",
+   },
+   "job_list": {
+        "l2_schema_for_jobs" : "//DIV[@class='job_con']/TABLE/TBODY/TR[1]/following-sibling::*",
+        "l2_schema_for_joburl" : "./TD[1]/A/@href",
+        "l2_job_title" : "./TD[1]/A/text()",
+        "l2_job_location" : "./TD[2]/text()",
+        "l2_job_date" : "./TD[4]/text()"
+   },
+   "job": {
+        "l3_job_description" : "//TABLE[@class='job_info']/TBODY/TR[last()]/TD[1]",
+   }
+}
