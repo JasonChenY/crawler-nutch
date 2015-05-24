@@ -126,10 +126,21 @@ public class HttpResponse implements Response {
                */
                     String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
                     ((HttpPost) request).setEntity(new StringEntity(data));
-                    request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+
+                    if ( !schema.getPost_content_type().isEmpty() ) {
+                        /* Intel, POST JSON doc directly */
+                        request.addHeader("Content-Type", schema.getPost_content_type());
+                    } else {
+                        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                    }
                 } else if (!schema.getL1_postdata().isEmpty()) {
                     ((HttpPost) request).setEntity(new StringEntity(schema.getL1_postdata()));
-                    request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                    if ( !schema.getPost_content_type().isEmpty() ) {
+                        /* Intel, POST JSON doc directly */
+                        request.addHeader("Content-Type", schema.getPost_content_type());
+                    } else {
+                        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                    }
                     if (Http.LOG.isDebugEnabled()) Http.LOG.debug("post data: " + schema.getL1_postdata());
                 }
                 if (Http.LOG.isDebugEnabled()) Http.LOG.info("using POST for url:" + url.toString());
@@ -148,7 +159,12 @@ public class HttpResponse implements Response {
                 if (page.getMetadata().containsKey(CompanyUtils.company_dyn_data)) {
                     String data = Bytes.toString(page.getMetadata().get(CompanyUtils.company_dyn_data));
                     ((HttpPost) request).setEntity(new StringEntity(data));
-                    request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                    if ( !schema.getPost_content_type().isEmpty() ) {
+                        /* Intel, POST JSON doc directly */
+                        request.addHeader("Content-Type", schema.getPost_content_type());
+                    } else {
+                        request.addHeader("Content-Type", "application/x-www-form-urlencoded");
+                    }
                 }
             } else {
                 request = new HttpGet(url.toString());

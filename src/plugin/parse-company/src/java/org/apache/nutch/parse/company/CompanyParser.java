@@ -938,8 +938,19 @@ public class CompanyParser implements Parser {
             while (matcher_for_grpstr.find()) {
                 String grpstr = matcher_for_grpstr.group(1);
                 int grpid = Integer.parseInt(grpstr);
-                if ( src_matcher_result.group(grpid) != null )
-                    matcher_for_grpstr.appendReplacement(result,  src_matcher_result.group(grpid));
+                String matcher = src_matcher_result.group(grpid);
+                if ( matcher != null ) {
+                    if ( matcher.endsWith("!") ) {
+                    /* trim off the trailing !
+                    * in Ajax, it is using !|! as separator, but it is possible there will be ! inside the content,
+                    * then we can use ! as the last valid character in regex, instead using ! as last valid char,
+                    * which means in many case, there will be one trailing ! in matcher group,
+                    * strip off it, this is dangerous/ugly, because some regex in schema use !as last valid char
+                    **/
+                        matcher = matcher.substring(0, matcher.length()-1);
+                    }
+                    matcher_for_grpstr.appendReplacement(result, matcher);
+                }
                 else
                     matcher_for_grpstr.appendReplacement(result,  "");
             }
@@ -1119,9 +1130,12 @@ public class CompanyParser implements Parser {
               /* here need to strip off the invalid char for ibm site */
               title = SolrUtils.stripNonCharCodepoints(title);
 
-              expr = xpath.compile(schema.getL2_job_location());
-              String location = (String) expr.evaluate(job, XPathConstants.STRING);
-              location = LocationUtils.format(location, schema.getJob_location_format_regex());
+              String location = "";
+              if ( !schema.getL2_job_location().isEmpty() ) {
+                  expr = xpath.compile(schema.getL2_job_location());
+                  location = (String) expr.evaluate(job, XPathConstants.STRING);
+                  location = LocationUtils.format(location, schema.getJob_location_format_regex());
+              }
 
               String date = "";
               if ( !schema.getL2_job_date().isEmpty() ) {
@@ -1234,6 +1248,16 @@ public class CompanyParser implements Parser {
                     l3_description = extract_matcher_groups(result, schema.getL3_job_description());
                     //l3_description = URLDecoder.decode(l3_description, "utf-8");
                     l3_description = EncodeUtils.rawdecode(l3_description, "UTF-8");
+                }
+
+                /* Intel case, get job_location in summary page */
+                if (!schema.getL3_job_location().isEmpty()) {
+                    String l3_location = extract_matcher_groups(result, schema.getL3_job_location());
+                    if ( !schema.getJob_regex_matcher_for_location().isEmpty() ) {
+                        l3_location = extract_via_regex(l3_location, schema.getJob_regex_matcher_for_location(), 1);
+                    }
+                    l3_location = LocationUtils.format(l3_location, schema.getJob_location_format_regex());
+                    page.getMetadata().put(CompanyUtils.company_job_location, ByteBuffer.wrap(l3_location.getBytes()));
                 }
             } else {
                 LOG.warn(url + " failed to match job description");
@@ -1359,9 +1383,13 @@ public class CompanyParser implements Parser {
               /* here need to strip off the invalid char for ibm site */
           title = SolrUtils.stripNonCharCodepoints(title);
 
-          String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
-          String location = doc.read(pattern_location, String.class);
-          location = LocationUtils.format(location, schema.getJob_location_format_regex());
+          String location = "";
+          if ( !schema.getL2_job_location().isEmpty() ) {
+              /* Intel case, L2 job_location can be ["multiple location"], should get it from L3 */
+              String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
+              location = doc.read(pattern_location, String.class);
+              location = LocationUtils.format(location, schema.getJob_location_format_regex());
+          }
 
           String date = "";
           if ( !schema.getL2_job_date().isEmpty() ) {

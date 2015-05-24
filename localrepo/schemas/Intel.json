@@ -1,0 +1,34 @@
+{ 
+    "company" : "Intel",
+    "l1_url" : "https://intel.taleo.net/careersection/rest/jobboard/searchjobs?lang=en&portal=660190084",
+    "l1_method" : "POST",
+    "l1_postdata" : "{\"advancedSearchFiltersSelectionParam\":{\"searchFilterSelections\":[{\"id\":\"ORGANIZATION\",\"selectedValues\":[]},{\"id\":\"LOCATION\",\"selectedValues\":[]},{\"id\":\"JOB_FIELD\",\"selectedValues\":[]},{\"id\":\"URGENT_JOB\",\"selectedValues\":[]},{\"id\":\"EMPLOYEE_STATUS\",\"selectedValues\":[]},{\"id\":\"JOB_NUMBER\",\"selectedValues\":[]}]},\"fieldData\":{\"fields\":{\"KEYWORD\":\"\",\"LOCATION\":\"\"},\"valid\":true},\"filterSelectionParam\":{\"searchFilterSelections\":[{\"id\":\"POSTING_DATE\",\"selectedValues\":[]},{\"id\":\"LOCATION\",\"selectedValues\":[\"200000008\"]},{\"id\":\"JOB_FIELD\",\"selectedValues\":[]},{\"id\":\"JOB_TYPE\",\"selectedValues\":[]},{\"id\":\"JOB_SCHEDULE\",\"selectedValues\":[]}],\"activeFilterId\":\"LOCATION\"},\"sortingSelection\":{\"sortBySelectionParam\":\"3\",\"ascendingSortingOrder\":\"false\"},\"multilineEnabled\":false,\"pageNo\":1}",
+    "post_content_type" : "application/json",
+    "cookie" : "locale=en",
+    "page_list" : {
+          "l2_template_for_nextpage_url" : "https://intel.taleo.net/careersection/rest/jobboard/searchjobs?lang=en&portal=660190084",
+          "l2_nextpage_method" : "POST",
+          "l2_template_for_nextpage_postdata" : "{\"advancedSearchFiltersSelectionParam\":{\"searchFilterSelections\":[{\"id\":\"ORGANIZATION\",\"selectedValues\":[]},{\"id\":\"LOCATION\",\"selectedValues\":[]},{\"id\":\"JOB_FIELD\",\"selectedValues\":[]},{\"id\":\"URGENT_JOB\",\"selectedValues\":[]},{\"id\":\"EMPLOYEE_STATUS\",\"selectedValues\":[]},{\"id\":\"JOB_NUMBER\",\"selectedValues\":[]}]},\"fieldData\":{\"fields\":{\"KEYWORD\":\"\",\"LOCATION\":\"\"},\"valid\":true},\"filterSelectionParam\":{\"searchFilterSelections\":[{\"id\":\"POSTING_DATE\",\"selectedValues\":[]},{\"id\":\"LOCATION\",\"selectedValues\":[\"200000008\"]},{\"id\":\"JOB_FIELD\",\"selectedValues\":[]},{\"id\":\"JOB_TYPE\",\"selectedValues\":[]},{\"id\":\"JOB_SCHEDULE\",\"selectedValues\":[]}]},\"sortingSelection\":{\"sortBySelectionParam\":\"3\",\"ascendingSortingOrder\":\"false\"},\"multilineEnabled\":false,\"pageNo\":2}",
+          "l2_nextpage_regex" : "s/(.*\"pageNo\":)(\\d+)/$1-deadbeaf-/g",
+          "l2_last_page" : "$.pagingData.pageSize",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "$.requisitionList",
+          "l2_template_for_joburl" : "https://intel.taleo.net/careersection/10000/jobdetail.ftl?job=759634",
+          "l2_joburl_regex" : "s/(.*job=)(\\d+)/$1-deadbeaf-/g",
+          "l2_schema_for_joburl" : "contestNo",
+          "l2_job_title" : "column[0]",
+          "comment:l2_job_location" : "column[1]",
+          "l2_job_date" : "column[2]",
+    },
+    "job" : {
+          "comment": "two kind of format, and should take mulilocation job from l3",
+          "l3_regex_matcher_for_job" : "/!rdPager!%24(?:![^\\|]*\\|){14}((?:!!\\*)?!([^\\|]*)\\|){2}((?:!!\\*)?!([^\\|]*)\\|){2}(?:![^\\|]*\\|){2}(!([^\\|]*)\\|){2}(!([^\\|]*)\\|){2}/",
+          "l3_job_description":"$2<BR/>$4",
+          "l3_job_location" : "$6|$8",
+    },
+    "job_date_format" : "MMM dd yyyy",
+    "comment:": "China-PRC, Nanjing| China-PRC, Beijing| China-PRC, Shanghai| Singapore-Singapore, Hong Kong-PRC, Hong Kong",
+    "job_regex_matcher_for_location" : "/[^-]*PRC,\\s*([^\\|]*)/",
+}
+

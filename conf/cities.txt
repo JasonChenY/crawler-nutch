@@ -20,5 +20,16 @@
 珠海=Zhuhai
 城都=Chengdou
 台北=ZHO_Taipei
+全国=Any
+城都=Chengdu
+新加坡=singapore
+合肥=Hefei
+宁波=Ningbo
+山西=Shanxi
+石家庄=Shijiazhuang
+厦门=Xiamen
+郑州=Zhengzhou
+中山=Zhongshan
+
 
 

@@ -26,6 +26,7 @@ public class CompanySchema {
     private String l1_url;
     private String l1_method;
     private String l1_postdata;
+    private String post_content_type;
 
     private String l2_content_type;
     private String l2_template_for_nextpage_url;
@@ -63,6 +64,8 @@ public class CompanySchema {
     /* field for Danone, job post date in l3 pdf file */
     private String l3_job_date;
     private String l3_job_description;
+    /* Intel: many jobs have a ["multiple location"] in L2, should get job_location from L3*/
+    private String l3_job_location;
     private String l3_regex_matcher_for_job; /* Oracle */
 
     /* field for dateformat, this will be applied to either l2(Ericsson) or l3(Danone)*/
@@ -80,6 +83,7 @@ public class CompanySchema {
         setL1_url("");
         setL1_method("GET");
         setL1_postdata("");
+        setPost_content_type("");
 
         setL2_content_type("HTML");
         setL2_template_for_nextpage_url("");
@@ -109,6 +113,7 @@ public class CompanySchema {
         setL3_job_title("");
         setL3_job_date("");
         setL3_job_description("");
+        setL3_job_location("");
         setL3_regex_matcher_for_job("");
 
         setJob_date_format("");
@@ -161,6 +166,14 @@ public class CompanySchema {
 
     public void setL1_postdata(String l1_postdata) {
         if (l1_postdata != null) this.l1_postdata = l1_postdata;
+    }
+
+    public String getPost_content_type() {
+        return post_content_type;
+    }
+
+    public void setPost_content_type(String post_content_type) {
+        if (post_content_type != null) this.post_content_type = post_content_type;
     }
 
     public String getL2_content_type() {
@@ -366,6 +379,14 @@ public class CompanySchema {
         if (l3_job_description != null) this.l3_job_description = l3_job_description;
     }
 
+    public String getL3_job_location() {
+        return l3_job_location;
+    }
+
+    public void setL3_job_location(String l3_job_location) {
+        if (l3_job_location != null) this.l3_job_location = l3_job_location;
+    }
+
     public String getL3_regex_matcher_for_job() {
         return l3_regex_matcher_for_job;
     }
@@ -405,6 +426,7 @@ public class CompanySchema {
         System.out.println("l1_url : " + l1_url);
         System.out.println("l1_method : " + l1_method);
         System.out.println("l1_postdata : " + l1_postdata);
+        System.out.println("post_content_type : " + post_content_type);
         System.out.println("  ");
         System.out.println("l2_content_type : " + l2_content_type);
         System.out.println("l2_template_for_nextpage_url : " + l2_template_for_nextpage_url);
@@ -434,6 +456,7 @@ public class CompanySchema {
         System.out.println("l3_job_title: " + l3_job_title);
         System.out.println("l3_job_date : " + l3_job_date);
         System.out.println("l3_job_description : " + l3_job_description);
+        System.out.println("l3_job_location : " + l3_job_location);
         System.out.println("l3_regex_matcher_for_job : " + l3_regex_matcher_for_job);
         System.out.println("  ");
         System.out.println("job_date_format : " + job_date_format);

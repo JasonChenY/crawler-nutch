@@ -114,6 +114,7 @@ public class CompanySchemaRepository {
           companySchema.setL1_url((String) json.get("l1_url"));
           companySchema.setL1_method((String) json.get("l1_method"));
           companySchema.setL1_postdata((String) json.get("l1_postdata"));
+          companySchema.setPost_content_type((String) json.get("post_content_type"));
 
           JSONObject page_list = (JSONObject)json.get("page_list");
           if ( page_list != null ) {
@@ -151,6 +152,7 @@ public class CompanySchemaRepository {
               companySchema.setL3_job_title((String) job.get("l3_job_title"));
               companySchema.setL3_job_date((String) job.get("l3_job_date"));
               companySchema.setL3_job_description((String) job.get("l3_job_description"));
+              companySchema.setL3_job_location((String) job.get("l3_job_location"));
               companySchema.setL3_regex_matcher_for_job((String) job.get("l3_regex_matcher_for_job"));
           }
 
