@@ -338,6 +338,19 @@ public class DateUtils {
     public static String getCurrentDate() {
         return getThreadLocalDateFormat().format(new Date());
     }
+    public static boolean nDaysAgo(String date, int days) {
+        /* Assuming date in "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'" format because we generating it with this format */
+        if ( days == Integer.MAX_VALUE ) return false;
+        try {
+            long prev = getThreadLocalDateFormat().parse(date).getTime();
+            if ((System.currentTimeMillis() - prev) > days * 24 * 60 * 60 * 1000L) 
+                return true;
+            else
+                return false;
+        } catch ( Exception e ) {
+            return false;
+        }
+    }
     public static void main(String args[]) {
         String    strs[] = {"m06a - a19b - c2014", "April a15b   year2014a", "April-a15b-year2014a", "d19a   m06b  y2014c",
                 "y2014a-m6b - d19c - "};
@@ -351,6 +364,13 @@ public class DateUtils {
             }
         } catch ( Exception e ) {
             e.printStackTrace();
+        }
+
+        String prev = "2015-05-03T00:00:00.000Z";
+        if ( nDaysAgo(prev, 10) ) {
+            System.out.println("yes, n days ago");
+        } else {
+            System.out.println("not n days ago");
         }
     }
 }

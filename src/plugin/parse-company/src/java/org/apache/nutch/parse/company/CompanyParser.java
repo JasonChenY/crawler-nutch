@@ -162,6 +162,7 @@ public class CompanyParser implements Parser {
   private boolean debug_fetch_single_item;
   private boolean debug_save_page_content;
   private int fetch_first_n_pages;
+  private int fetch_winthin_n_days_pages;
 
   private Signature sig;
 
@@ -1004,6 +1005,13 @@ public class CompanyParser implements Parser {
                 if (!schema.getL2_job_date().isEmpty()) {
                     date = extract_matcher_groups(result, schema.getL2_job_date());
                     date = DateUtils.formatDate(date, schema.getJob_date_format());
+
+                    if ( DateUtils.nDaysAgo(date, fetch_winthin_n_days_pages) ) {
+                        if (LOG.isDebugEnabled()) {
+                            LOG.debug("Job posted " + fetch_winthin_n_days_pages + " days ago, ignore");
+                        }
+                        continue;
+                    }
                 } else {
                     date = DateUtils.getCurrentDate();
                 }
@@ -1142,6 +1150,12 @@ public class CompanyParser implements Parser {
                   expr = xpath.compile(schema.getL2_job_date());
                   date = (String) expr.evaluate(job, XPathConstants.STRING);
                   date = DateUtils.formatDate(date, schema.getJob_date_format());
+                  if ( DateUtils.nDaysAgo(date, fetch_winthin_n_days_pages) ) {
+                      if (LOG.isDebugEnabled()) {
+                          LOG.debug("Job posted " + fetch_winthin_n_days_pages + " days ago, ignore");
+                      }
+                      continue;
+                  }
               } else {
                   date = DateUtils.getCurrentDate();
               }
@@ -1396,6 +1410,12 @@ public class CompanyParser implements Parser {
               String pattern_date = pattern_prefix + "." + schema.getL2_job_date();
               date = doc.read(pattern_date, String.class);
               date = DateUtils.formatDate(date, schema.getJob_date_format());
+              if ( DateUtils.nDaysAgo(date, fetch_winthin_n_days_pages) ) {
+                  if (LOG.isDebugEnabled()) {
+                      LOG.debug("Job posted " + fetch_winthin_n_days_pages + " days ago, ignore");
+                  }
+                  continue;
+              }
           } else {
               date = DateUtils.getCurrentDate();
           }
@@ -1549,6 +1569,8 @@ public class CompanyParser implements Parser {
     this.fetch_first_n_pages = conf.getInt("fetch.first.n.pages", 5);
     if ( this.fetch_first_n_pages < 0 ) this.fetch_first_n_pages = Integer.MAX_VALUE;
     this.debug_save_page_content = conf.getBoolean("debug.save.page.content", false);
+    this.fetch_winthin_n_days_pages = conf.getInt("fetch.winthin.n.days.pages", 180);
+    if ( this.fetch_first_n_pages < 0 ) this.fetch_first_n_pages = Integer.MAX_VALUE;
   }
 
   public Configuration getConf() {

@@ -117,7 +117,13 @@
 <property>
     <name>fetch.first.n.pages</name>
     <value>5</value>
-    <description>Only fetch first n Pages for each company, -1: all pages. </description>
+    <description>Only fetch first n Pages for each company, -1: all pages. default 5 </description>
+</property>
+
+<property>
+    <name>fetch.winthin.n.days.pages</name>
+    <value>5</value>
+    <description>Only fetch job posted within days, -1: all pages. default 180 </description>
 </property>
 
 </configuration>
