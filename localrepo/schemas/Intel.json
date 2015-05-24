@@ -25,10 +25,10 @@
           "comment": "two kind of format, and should take mulilocation job from l3",
           "l3_regex_matcher_for_job" : "/!rdPager!%24(?:![^\\|]*\\|){14}((?:!!\\*)?!([^\\|]*)\\|){2}((?:!!\\*)?!([^\\|]*)\\|){2}(?:![^\\|]*\\|){2}(!([^\\|]*)\\|){2}(!([^\\|]*)\\|){2}/",
           "l3_job_description":"$2<BR/>$4",
-          "l3_job_location" : "$6|$8",
+          "l3_job_location" : "$6,$8",
     },
     "job_date_format" : "MMM dd yyyy",
-    "comment:": "China-PRC, Nanjing| China-PRC, Beijing| China-PRC, Shanghai| Singapore-Singapore, Hong Kong-PRC, Hong Kong",
-    "job_regex_matcher_for_location" : "/[^-]*PRC,\\s*([^\\|]*)/",
+    "comment:": "China-PRC, Nanjing, China-PRC, Beijing, China-PRC, Shanghai, Singapore-Singapore, Hong Kong-PRC, Hong Kong",
+    "job_regex_matcher_for_location" : "/[^-]*PRC,\\s*([^,]*)/",
 }
 
