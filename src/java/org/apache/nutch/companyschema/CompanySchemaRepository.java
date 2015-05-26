@@ -145,6 +145,7 @@ public class CompanySchemaRepository {
               companySchema.setL2_job_location((String) job_list.get("l2_job_location"));
               companySchema.setL2_job_date((String) job_list.get("l2_job_date"));
               companySchema.setL2_job_description((String) job_list.get("l2_job_description"));
+              companySchema.setL2_summarypage_method((String) job_list.get("l2_summarypage_method"));
           }
 
           JSONObject job = (JSONObject)json.get("job");

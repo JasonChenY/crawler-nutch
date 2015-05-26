@@ -126,5 +126,11 @@
     <description>Only fetch job posted within days, -1: all pages. default 180 </description>
 </property>
 
+<property>
+    <name>fetch.webdriver.download.dir</name>
+    <value>/sdk/tmp/chrome/download</value>
+    <description>Default directory to download file, default: /tmp</description>
+</property>
+
 </configuration>
 

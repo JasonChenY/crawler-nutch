@@ -8,6 +8,7 @@
           "l2_job_title": "./TD[1]/A/text()",
           "l2_job_location": "./TD[4]/text()",
           "l2_job_date": "./TD[2]/text()",
+          "l2_summarypage_method" : "WEBDRIVER",
     },
     "job": {
           "l3_job_description":"//DIV[@class='page'][1]",

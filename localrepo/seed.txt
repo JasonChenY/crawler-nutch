@@ -7,3 +7,11 @@ http://careers.peopleclick.eu.com/careerscp/client_nokiasolutionsandnetworks/ext
 https://jobs.ericsson.com/search/?q=&locationsearch=CN	Ericsson
 http://www.lenovocareers.com/zh-cn/search-results?countryid=46&cntry=china&city=-1&category=-1&keywords=&datePosted=7&zipCode=&radius=50	Lenovo
 http://career.huawei.com/recruitment/services/portal/portalpub/getJob/page/10/1?orderBy=ISS_STARTDATE_DESC&countryName=China&jobType=1&_=1431727503633	Huawei
+http://www.careersathoneywell.com/zh/jobsearch/searchresults.aspx?Keyword=&JobId=&Category=&Country=1012&TravelName=&Postdate=14&SBG=&URR=&LanguageID=5	Honeywell
+http://www.goldmansachs.com/a/data/jobs/asia_except_japan.html	Goldmansachs
+https://oracle.taleo.net/careersection/2/jobsearch.ajax	Oracle
+https://philips.taleo.net/careersection/2/jobsearch.ajax	Philips	
+http://msdchina.51job.com/sc/job_list.php?begin=begin	Merck
+http://careers.peopleclick.com/careerscp/client_cocacola/external/zh-cn/search.do	Cocacola
+https://intel.taleo.net/careersection/rest/jobboard/searchjobs?lang=en&portal=660190084	Intel
+https://career.bayer.cn/zh/job-search/?accessLevel=&functional_area=&country=CN&location=&company=&fulltext=	Bayer

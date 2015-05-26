@@ -21,8 +21,12 @@ import org.apache.avro.util.Utf8;
 import org.apache.gora.mapreduce.GoraReducer;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
+import org.apache.nutch.companyschema.CompanySchema;
+import org.apache.nutch.companyschema.CompanySchemaRepository;
+import org.apache.nutch.companyschema.CompanyUtils;
 import org.apache.nutch.crawl.CrawlStatus;
 import org.apache.nutch.host.HostDb;
+import org.apache.nutch.metadata.SpellCheckedMetadata;
 import org.apache.nutch.net.URLFilterException;
 import org.apache.nutch.net.URLFilters;
 import org.apache.nutch.net.URLNormalizers;
@@ -33,10 +37,13 @@ import org.apache.nutch.storage.Host;
 import org.apache.nutch.storage.Mark;
 import org.apache.nutch.storage.ProtocolStatus;
 import org.apache.nutch.storage.WebPage;
+import org.apache.nutch.util.MimeUtil;
 import org.apache.nutch.util.TableUtil;
 import org.apache.nutch.util.URLUtil;
 import org.slf4j.Logger;
 
+import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.URL;
@@ -45,6 +52,11 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
+
+import org.openqa.selenium.WebDriver;
+import org.openqa.fetcher.WebDriverService;
+
+import java.io.FileInputStream;
 
 public class FetcherReducer extends
     GoraReducer<IntWritable, FetchEntry, String, WebPage> {
@@ -75,6 +87,9 @@ public class FetcherReducer extends
 
   private ParseUtil parseUtil;
   private boolean skipTruncated;
+
+  private CompanySchemaRepository repo;
+  private String fetch_webdriver_download_dir;
 
   /**
    * This class described the item to be fetched.
@@ -439,6 +454,8 @@ public class FetcherReducer extends
     private final Context context;
     private final boolean ignoreExternalLinks;
 
+
+
     public FetcherThread(Context context, int num) {
       this.setDaemon(true); // don't hang JVM on exit
       this.setName("FetcherThread" + num); // use an informative name
@@ -452,8 +469,185 @@ public class FetcherReducer extends
       this.byIP = conf.getBoolean("fetcher.threads.per.host.by.ip", true);
       this.ignoreExternalLinks = conf.getBoolean("db.ignore.external.links",
           false);
+
+
     }
 
+    private void fetch_via_protocol(FetchItem fit) throws Exception {
+        // fetch the page
+        final Protocol protocol = this.protocolFactory.getProtocol(fit.url);
+        final BaseRobotRules rules = protocol.getRobotRules(fit.url,
+                fit.page);
+        if (!rules.isAllowed(fit.u.toString())) {
+            // unblock
+            fetchQueues.finishFetchItem(fit, true);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Denied by robots.txt: " + fit.url);
+            }
+            output(fit, null, ProtocolStatusUtils.STATUS_ROBOTS_DENIED,
+                    CrawlStatus.STATUS_GONE);
+            return;
+        }
+        if (rules.getCrawlDelay() > 0) {
+            if (rules.getCrawlDelay() > maxCrawlDelay && maxCrawlDelay >= 0) {
+                // unblock
+                fetchQueues.finishFetchItem(fit, true);
+                LOG.debug("Crawl-Delay for " + fit.url + " too long ("
+                        + rules.getCrawlDelay() + "), skipping");
+                output(fit, null, ProtocolStatusUtils.STATUS_ROBOTS_DENIED,
+                        CrawlStatus.STATUS_GONE);
+                return;
+            } else {
+                final FetchItemQueue fiq = fetchQueues
+                        .getFetchItemQueue(fit.queueID);
+                fiq.crawlDelay = rules.getCrawlDelay();
+                if (LOG.isDebugEnabled()) {
+                    LOG.info("Crawl delay for queue: " + fit.queueID
+                            + " is set to " + fiq.crawlDelay
+                            + " as per robots.txt. url: " + fit.url);
+                }
+            }
+        }
+        final ProtocolOutput output = protocol.getProtocolOutput(fit.url,
+                fit.page);
+        final ProtocolStatus status = output.getStatus();
+        final Content content = output.getContent();
+        // unblock queue
+        fetchQueues.finishFetchItem(fit);
+
+        context.getCounter("FetcherStatus",
+                ProtocolStatusUtils.getName(status.getCode())).increment(1);
+
+        int length = 0;
+        if (content != null && content.getContent() != null)
+            length = content.getContent().length;
+        updateStatus(length);
+
+        switch (status.getCode()) {
+
+            case ProtocolStatusCodes.WOULDBLOCK:
+                // retry ?
+                fetchQueues.addFetchItem(fit);
+                break;
+
+            case ProtocolStatusCodes.SUCCESS: // got a page
+                output(fit, content, status, CrawlStatus.STATUS_FETCHED);
+                break;
+
+            case ProtocolStatusCodes.MOVED: // redirect
+            case ProtocolStatusCodes.TEMP_MOVED:
+                byte code;
+                boolean temp;
+                if (status.getCode() == ProtocolStatusCodes.MOVED) {
+                    code = CrawlStatus.STATUS_REDIR_PERM;
+                    temp = false;
+                } else {
+                    code = CrawlStatus.STATUS_REDIR_TEMP;
+                    temp = true;
+                }
+                final String newUrl = ProtocolStatusUtils.getMessage(status);
+                handleRedirect(fit.url, newUrl, temp, FetcherJob.PROTOCOL_REDIR,
+                        fit.page);
+                output(fit, content, status, code);
+                break;
+            case ProtocolStatusCodes.EXCEPTION:
+                logFetchFailure(fit.url, ProtocolStatusUtils.getMessage(status));
+              /* FALLTHROUGH */
+            case ProtocolStatusCodes.RETRY: // retry
+            case ProtocolStatusCodes.BLOCKED:
+                output(fit, null, status, CrawlStatus.STATUS_RETRY);
+                break;
+
+            case ProtocolStatusCodes.GONE: // gone
+            case ProtocolStatusCodes.NOTFOUND:
+            case ProtocolStatusCodes.ACCESS_DENIED:
+            case ProtocolStatusCodes.ROBOTS_DENIED:
+                output(fit, null, status, CrawlStatus.STATUS_GONE);
+                break;
+
+            case ProtocolStatusCodes.NOTMODIFIED:
+                output(fit, null, status, CrawlStatus.STATUS_NOTMODIFIED);
+                break;
+
+            default:
+                if (LOG.isWarnEnabled()) {
+                    LOG.warn("Unknown ProtocolStatus: " + status.getCode());
+                }
+                output(fit, null, status, CrawlStatus.STATUS_RETRY);
+        }
+    }
+    public File lastFileModified(String dir) {
+        File fl = new File(dir);
+        File[] files = fl.listFiles(new java.io.FileFilter() {
+              public boolean accept(File file) {
+                  return file.isFile();
+              }
+          });
+        long lastMod = Long.MIN_VALUE;
+        File choice = null;
+        for (File file : files) {
+            if (file.lastModified() > lastMod) {
+                choice = file;
+                lastMod = file.lastModified();
+            }
+        }
+        return choice;
+    }
+    private void fetch_via_webdriver(FetchItem fit) throws Exception {
+        WebDriver driver = null;
+        try {
+            String subdir = Long.toString(Thread.currentThread().getId());
+            long beginTime = System.currentTimeMillis();
+            driver = WebDriverService.getWebDriver("http://127.0.0.1:8899", fetch_webdriver_download_dir + "/" + subdir);
+            driver.get(fit.url);
+            Thread.sleep(10000);
+            File file = lastFileModified(fetch_webdriver_download_dir + "/" + subdir);
+            if ( LOG.isDebugEnabled() ) {
+                LOG.debug(fit.url + " Title: " + driver.getTitle());
+            }
+
+            // unblock queue
+            fetchQueues.finishFetchItem(fit);
+
+            if ( file != null && file.lastModified() > beginTime ) {
+                /* successful case */
+                FileInputStream in = new FileInputStream(file);
+                byte[] buffer = new byte[8*1024];
+                int bufferFilled = 0;
+                int totalRead = 0;
+                ByteArrayOutputStream out = new ByteArrayOutputStream();
+                while ((bufferFilled = in.read(buffer, 0, buffer.length)) != -1) {
+                    totalRead += bufferFilled;
+                    out.write(buffer, 0, bufferFilled);
+                }
+                byte[] bs = out.toByteArray();
+
+                Content content = new Content(fit.url, fit.url, bs, "application/pdf",
+                        new SpellCheckedMetadata(), new MimeUtil(this.context.getConfiguration()));
+
+                if ( LOG.isDebugEnabled() ) {
+                    LOG.debug(fit.url + " webdriver fetched " + file.getName() + " " + bs.length + " bytes of " + content.getContentType());
+                }
+                ProtocolStatus status = ProtocolStatusUtils.STATUS_SUCCESS;
+
+                updateStatus(content.getContent().length);
+
+                output(fit, content, status, CrawlStatus.STATUS_FETCHED);
+            } else {
+                /* output(fit, null, ProtocolStatusUtils.STATUS_FAILED, CrawlStatus.STATUS_RETRY); */
+
+                /* retry */
+                LOG.warn(fit.url + " Failed to download file or wait too short time?");
+                fetchQueues.addFetchItem(fit);
+            }
+        } catch ( Exception e ) {
+            LOG.warn(fit.url + " Failed to fetch via webdriver", e);
+            /* retry */
+            fetchQueues.addFetchItem(fit);
+        } finally {
+            driver.quit();
+        }
+    }
     @Override
     @SuppressWarnings("fallthrough")
     public void run() {
@@ -493,106 +687,19 @@ public class FetcherReducer extends
             LOG.info("fetching " + fit.url + " (queue crawl delay="
                 + fetchQueues.getFetchItemQueue(fit.queueID).crawlDelay + "ms)");
 
-            // fetch the page
-            final Protocol protocol = this.protocolFactory.getProtocol(fit.url);
-            final BaseRobotRules rules = protocol.getRobotRules(fit.url,
-                fit.page);
-            if (!rules.isAllowed(fit.u.toString())) {
-              // unblock
-              fetchQueues.finishFetchItem(fit, true);
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Denied by robots.txt: " + fit.url);
-              }
-              output(fit, null, ProtocolStatusUtils.STATUS_ROBOTS_DENIED,
-                  CrawlStatus.STATUS_GONE);
-              continue;
-            }
-            if (rules.getCrawlDelay() > 0) {
-              if (rules.getCrawlDelay() > maxCrawlDelay && maxCrawlDelay >= 0) {
-                // unblock
-                fetchQueues.finishFetchItem(fit, true);
-                LOG.debug("Crawl-Delay for " + fit.url + " too long ("
-                    + rules.getCrawlDelay() + "), skipping");
-                output(fit, null, ProtocolStatusUtils.STATUS_ROBOTS_DENIED,
-                    CrawlStatus.STATUS_GONE);
-                continue;
-              } else {
-                final FetchItemQueue fiq = fetchQueues
-                    .getFetchItemQueue(fit.queueID);
-                fiq.crawlDelay = rules.getCrawlDelay();
-                if (LOG.isDebugEnabled()) {
-                  LOG.info("Crawl delay for queue: " + fit.queueID
-                      + " is set to " + fiq.crawlDelay
-                      + " as per robots.txt. url: " + fit.url);
+            CompanySchema schema = repo.getCompanySchema(CompanyUtils.getCompanyName(fit.page));
+            boolean use_webdriver = false;
+            if (schema != null) {
+                if ( CompanyUtils.isSummaryLink(fit.page) && schema.getL2_summarypage_method().equals("WEBDRIVER") ) {
+                    /* till now only Bayer case */
+                    use_webdriver = true;
                 }
-              }
             }
-            final ProtocolOutput output = protocol.getProtocolOutput(fit.url,
-                fit.page);
-            final ProtocolStatus status = output.getStatus();
-            final Content content = output.getContent();
-            // unblock queue
-            fetchQueues.finishFetchItem(fit);
-
-            context.getCounter("FetcherStatus",
-                ProtocolStatusUtils.getName(status.getCode())).increment(1);
-
-            int length = 0;
-            if (content != null && content.getContent() != null)
-              length = content.getContent().length;
-            updateStatus(length);
-
-            switch (status.getCode()) {
-
-            case ProtocolStatusCodes.WOULDBLOCK:
-              // retry ?
-              fetchQueues.addFetchItem(fit);
-              break;
-
-            case ProtocolStatusCodes.SUCCESS: // got a page
-              output(fit, content, status, CrawlStatus.STATUS_FETCHED);
-              break;
-
-            case ProtocolStatusCodes.MOVED: // redirect
-            case ProtocolStatusCodes.TEMP_MOVED:
-              byte code;
-              boolean temp;
-              if (status.getCode() == ProtocolStatusCodes.MOVED) {
-                code = CrawlStatus.STATUS_REDIR_PERM;
-                temp = false;
-              } else {
-                code = CrawlStatus.STATUS_REDIR_TEMP;
-                temp = true;
-              }
-              final String newUrl = ProtocolStatusUtils.getMessage(status);
-              handleRedirect(fit.url, newUrl, temp, FetcherJob.PROTOCOL_REDIR,
-                  fit.page);
-              output(fit, content, status, code);
-              break;
-            case ProtocolStatusCodes.EXCEPTION:
-              logFetchFailure(fit.url, ProtocolStatusUtils.getMessage(status));
-              /* FALLTHROUGH */
-            case ProtocolStatusCodes.RETRY: // retry
-            case ProtocolStatusCodes.BLOCKED:
-              output(fit, null, status, CrawlStatus.STATUS_RETRY);
-              break;
-
-            case ProtocolStatusCodes.GONE: // gone
-            case ProtocolStatusCodes.NOTFOUND:
-            case ProtocolStatusCodes.ACCESS_DENIED:
-            case ProtocolStatusCodes.ROBOTS_DENIED:
-              output(fit, null, status, CrawlStatus.STATUS_GONE);
-              break;
-
-            case ProtocolStatusCodes.NOTMODIFIED:
-              output(fit, null, status, CrawlStatus.STATUS_NOTMODIFIED);
-              break;
-
-            default:
-              if (LOG.isWarnEnabled()) {
-                LOG.warn("Unknown ProtocolStatus: " + status.getCode());
-              }
-              output(fit, null, status, CrawlStatus.STATUS_RETRY);
+            if ( use_webdriver ) {
+                LOG.info(fit.url + " fetching via webdriver");
+                fetch_via_webdriver(fit);
+            } else {
+                fetch_via_protocol(fit);
             }
 
           } catch (final Throwable t) { // unexpected exception
@@ -815,12 +922,22 @@ public class FetcherReducer extends
       skipTruncated = conf.getBoolean(ParserJob.SKIP_TRUNCATED, true);
       parseUtil = new ParseUtil(conf);
     }
+
+    this.repo = CompanySchemaRepository.getInstance(conf.get("company.schema.dir", "./"));
+    this.fetch_webdriver_download_dir = conf.get("fetch.webdriver.download.dir", "/tmp");
+
     LOG.info("Fetcher: threads: " + threadCount);
 
     int maxFeedPerThread = conf.getInt("fetcher.queue.depth.multiplier", 50);
     feeder = new QueueFeeder(context, fetchQueues, threadCount
         * maxFeedPerThread);
     feeder.start();
+
+    try {
+        WebDriverService.CreateAndStartService(8899);
+    } catch ( Exception e ) {
+        LOG.warn("Failed to start WebDriverService", e);
+    }
 
     for (int i = 0; i < threadCount; i++) { // spawn threads
       FetcherThread ft = new FetcherThread(context, i);
@@ -937,5 +1054,8 @@ public class FetcherReducer extends
 
     } while (activeThreads.get() > 0);
     LOG.info("-activeThreads=" + activeThreads);
+
+    WebDriverService.StopService();
+    LOG.info("WebDriverService stopped");
   }
 }

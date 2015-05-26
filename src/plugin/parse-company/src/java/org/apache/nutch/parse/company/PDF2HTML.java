@@ -21,6 +21,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.sax.SAXTransformerFactory;
 import javax.xml.transform.sax.TransformerHandler;
 import javax.xml.transform.stream.StreamResult;
+import org.xml.sax.InputSource;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -85,6 +86,10 @@ import org.xml.sax.ContentHandler;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
 
+import java.io.BufferedInputStream;
+import org.apache.tika.detect.EncodingDetector;
+import org.apache.tika.parser.txt.CharsetDetector;
+import org.apache.tika.parser.txt.Icu4jEncodingDetector;
 /**
  * Simple command line interface for Apache Tika.
  */
@@ -96,11 +101,7 @@ public class PDF2HTML {
 
         PDF2HTML cli = new PDF2HTML();
 
-        if (args.length > 0) {
-            for (int i = 0; i < args.length; i++) {
-                cli.process(args[i]);
-            }
-        }
+        cli.process(args);
     }
 
     private class OutputType {
@@ -170,7 +171,7 @@ public class PDF2HTML {
 
     private OutputType type = XML;
 
-    private String encoding = null;
+    private String encoding = "UTF-8";
 
     /**
      * Password for opening encrypted documents, or <code>null</code>.
@@ -197,17 +198,35 @@ public class PDF2HTML {
         Metadata metadata = new Metadata();
         type.process(input, output, metadata);
     }
-    public void process(String arg) throws Exception {
+
+    public void process(String[] args) throws Exception {
         URL url;
-        File file = new File(arg);
+        File file = new File(args[0]);
         if (file.isFile()) {
             url = file.toURI().toURL();
         } else {
-            url = new URL(arg);
+            url = new URL(args[0]);
         }
 
+        Tika tika = new Tika();
+        System.out.println("Content-Type: " + tika.detect(args[0]));
+
+        EncodingDetector encodingDetector=new Icu4jEncodingDetector();
+        Charset encode=encodingDetector.detect(new BufferedInputStream(new FileInputStream(args[0])), new Metadata());
+	System.out.println("Encoding: " + encode.name());
+
+        String input_encoding = "UTF-8";
+        if ( args.length > 1 ) input_encoding = args[1]; 
+/*
         Metadata metadata = new Metadata();
+        metadata.add(Metadata.CONTENT_ENCODING, input_encoding); 
         InputStream input = TikaInputStream.get(url, metadata);
+*/
+        Metadata metadata = new Metadata();
+        InputSource ins = new InputSource(new FileInputStream(args[0]));
+        ins.setEncoding(input_encoding);
+        InputStream input = ins.getByteStream(); 
+
         try {
             //type.process(input, System.out, metadata);
             OutputStream output = new FileOutputStream ("/tmp/test.html");

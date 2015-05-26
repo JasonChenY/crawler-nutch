@@ -29,6 +29,7 @@
 厦门=Xiamen
 郑州=Zhengzhou
 中山=Zhongshan
+青岛=Qingdao
 
 
 

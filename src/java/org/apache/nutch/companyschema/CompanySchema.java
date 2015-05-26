@@ -59,6 +59,8 @@ public class CompanySchema {
     private String l2_job_date;
     /* field for Alibaba */
     private String l2_job_description;
+    /* for Bayer, summary page fetched via webdriver */
+    private String l2_summarypage_method;
 
     private String l3_job_title;
     /* field for Danone, job post date in l3 pdf file */
@@ -109,6 +111,7 @@ public class CompanySchema {
         setL2_job_location("");
         setL2_job_date("");
         setL2_job_description("");
+        setL2_summarypage_method("GET");
 
         setL3_job_title("");
         setL3_job_date("");
@@ -355,6 +358,14 @@ public class CompanySchema {
         if (l2_job_description != null) this.l2_job_description = l2_job_description;
     }
 
+    public String getL2_summarypage_method() {
+        return l2_summarypage_method;
+    }
+
+    public void setL2_summarypage_method(String l2_summarypage_method) {
+        if (l2_summarypage_method != null) this.l2_summarypage_method = l2_summarypage_method;
+    }
+
     public String getL3_job_title() {
         return l3_job_title;
     }
@@ -452,6 +463,7 @@ public class CompanySchema {
         System.out.println("l2_job_location : " + l2_job_location);
         System.out.println("l2_job_date : " + l2_job_date);
         System.out.println("l2_job_description : " + l2_job_description);
+        System.out.println("l2_summarypage_method : " + l2_summarypage_method);
         System.out.println("  ");
         System.out.println("l3_job_title: " + l3_job_title);
         System.out.println("l3_job_date : " + l3_job_date);

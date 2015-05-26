@@ -370,17 +370,17 @@ public class CompanyParser implements Parser {
           ByteBuffer.wrap(Bytes.toBytes(encoding)));
 
       input.setEncoding(encoding);
-      if (LOG.isTraceEnabled()) {
-        LOG.trace("Parsing..." + encoding);
-      }
 
-      String content_type = "html";
+      String content_type = TableUtil.toString(page.getContentType());
+      LOG.debug(url + " Parsing as " + content_type + " encoding: " + encoding);
+
+      /*
       Utf8 content_type_key = new Utf8(org.apache.nutch.net.protocols.Response.CONTENT_TYPE);
       if ( page.getHeaders().containsKey(content_type_key) ) {
           java.lang.CharSequence content_type_utf8 = page.getHeaders().get(content_type_key);
           content_type = content_type_utf8.toString();
           LOG.debug(url + " : " + content_type);
-      }
+      }*/
 
       if ( debug_save_page_content ) {
           save_page_content(url, content_type, page);
