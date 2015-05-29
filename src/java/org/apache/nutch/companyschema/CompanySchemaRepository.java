@@ -184,7 +184,7 @@ public class CompanySchemaRepository {
   }
 
   public static void main(String[] args) throws Exception {
-    if (args.length < 2) {
+    if (args.length < 1) {
       System.err.println("Usage: CompanySchemaRepository name");
       return;
     }
@@ -193,6 +193,8 @@ public class CompanySchemaRepository {
     if (d == null) {
       System.err.println("Company Schema '" + args[0] + "' not present");
       return;
+    } else {
+      d.print();
     }
   }
 }

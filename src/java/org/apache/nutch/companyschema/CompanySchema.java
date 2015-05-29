@@ -16,6 +16,10 @@
  */
 package org.apache.nutch.companyschema;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+
 public class CompanySchema {
     private String name;
     private String cookie;
@@ -431,49 +435,46 @@ public class CompanySchema {
     }
 
     public void print() {
-        System.out.println("name : " + name);
-        System.out.println("cookie : " + cookie);
-        System.out.println("cookieType : " + cookieType);
-        System.out.println("l1_url : " + l1_url);
-        System.out.println("l1_method : " + l1_method);
-        System.out.println("l1_postdata : " + l1_postdata);
-        System.out.println("post_content_type : " + post_content_type);
-        System.out.println("  ");
-        System.out.println("l2_content_type : " + l2_content_type);
-        System.out.println("l2_template_for_nextpage_url : " + l2_template_for_nextpage_url);
-        System.out.println("l2_schema_for_nextpage_url : " + l2_schema_for_nextpage_url);
-        System.out.println("l2_nextpage_method : " + l2_nextpage_method);
-        System.out.println("l2_template_for_nextpage_postdata : " + l2_template_for_nextpage_postdata);
-        System.out.println("l2_nextpage_regex : " + l2_nextpage_regex);
-        System.out.println("l2_nextpage_increment : " + l2_nextpage_increment);
-        System.out.println("l2_last_page : " + l2_last_page);
-        System.out.println("l2_regex_matcher_for_jobnbr : " + l2_regex_matcher_for_jobnbr);
-        System.out.println("  ");
-        System.out.println("l2_nextpage_postdata_inherit_regex : " + l2_nextpage_postdata_inherit_regex);
-        System.out.println("l2_nextpage_endflag : " + l2_nextpage_endflag);
-        System.out.println("  ");
-        System.out.println("l2_regex_matcher_for_jobs : " + l2_regex_matcher_for_jobs);
-        System.out.println("l2_schema_for_jobs : " + l2_schema_for_jobs);
-        System.out.println("l2_template_for_joburl : " + l2_template_for_joburl);
-        System.out.println("l2_template_for_joburl_repr : " + l2_template_for_joburl_repr);
-        System.out.println("l2_joburl_regex : " + l2_joburl_regex);
-        System.out.println("l2_schema_for_joburl : " + l2_schema_for_joburl);
-        System.out.println("l2_schema_for_joburl_repr : " + l2_schema_for_joburl_repr);
-        System.out.println("l2_job_title : " + l2_job_title);
-        System.out.println("l2_job_location : " + l2_job_location);
-        System.out.println("l2_job_date : " + l2_job_date);
-        System.out.println("l2_job_description : " + l2_job_description);
-        System.out.println("l2_summarypage_method : " + l2_summarypage_method);
-        System.out.println("  ");
-        System.out.println("l3_job_title: " + l3_job_title);
-        System.out.println("l3_job_date : " + l3_job_date);
-        System.out.println("l3_job_description : " + l3_job_description);
-        System.out.println("l3_job_location : " + l3_job_location);
-        System.out.println("l3_regex_matcher_for_job : " + l3_regex_matcher_for_job);
-        System.out.println("  ");
-        System.out.println("job_date_format : " + job_date_format);
-        System.out.println("job_location_format_regex : " + job_location_format_regex);
-        System.out.println("job_regex_matcher_for_location : " + job_regex_matcher_for_location);
+        Class cs = this.getClass();
+
+        Field field[] = cs.getDeclaredFields();
+        for (int i = 0; i < field.length; i++) {
+            Field f = field[i];
+            String fieldname = f.getName();
+            String value = "";
+            try {
+                value = (String)f.get(this);
+                System.out.println(fieldname + " = " + value);
+            } catch ( IllegalAccessException e ) {
+                System.out.println(fieldname + " access exception");
+            }
+        }
+
+        Method[] method = cs.getDeclaredMethods();
+        for ( int i = 0; i < method.length; i++ ) {
+            Method m = method[i];
+            String name = m.getName();
+            try {
+                if ( name.indexOf("get") != -1) {
+                    Object returnobject = m.invoke(this, null);
+                    String value = "";
+                    if (returnobject.getClass().getSimpleName().equals("String")) {
+                        value = "'" + returnobject.toString() + "'";
+                    } else {
+                        value = returnobject.toString();
+                    }
+                    System.out.println(name + "->" + value);
+                }
+            } catch (SecurityException e) {
+                e.printStackTrace();
+            } catch (IllegalArgumentException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
 
