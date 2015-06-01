@@ -161,7 +161,9 @@ public class CompanySchemaRepository {
           companySchema.setJob_date_format((String) json.get("job_date_format"));
           companySchema.setJob_location_format_regex((String) json.get("job_location_format_regex"));
           companySchema.setJob_regex_matcher_for_location((String) json.get("job_regex_matcher_for_location"));
-
+          if ( json.get("job_location_tokenize") != null ) {
+              companySchema.setJob_location_tokenize((Boolean) json.get("job_location_tokenize"));
+          }
           return companySchema;
       } catch (Exception e) {
           LOG.warn("JSON file parse failed: " + name);

@@ -85,6 +85,9 @@ public class CompanySchema {
     IN-IN,India-Hyderabad, SG-SG,Singapore-Singapore, CN-CN,China-Dalian, AU-AU,Australia-Sydney */
     private String job_regex_matcher_for_location;
 
+    /* for Shell, job location is in random format, fallback to last resort, this is slow */
+    private boolean job_location_tokenize;
+
     public CompanySchema(String n) {
         setName(n);
         setCookie("");
@@ -130,6 +133,7 @@ public class CompanySchema {
         setJob_date_format("");
         setJob_location_format_regex("");
         setJob_regex_matcher_for_location("");
+        setJob_location_tokenize(false);
     }
 
     public String getName() {
@@ -444,6 +448,14 @@ public class CompanySchema {
 
     public void setJob_regex_matcher_for_location(String job_regex_matcher_for_location) {
         if (job_regex_matcher_for_location != null) this.job_regex_matcher_for_location = job_regex_matcher_for_location;
+    }
+
+    public boolean getJob_location_tokenize() {
+        return job_location_tokenize;
+    }
+
+    public void setJob_location_tokenize(boolean job_location_tokenize) {
+        this.job_location_tokenize = job_location_tokenize;
     }
 
     public void print() {

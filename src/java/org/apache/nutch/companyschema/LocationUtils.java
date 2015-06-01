@@ -68,13 +68,13 @@ public class LocationUtils {
     }
 
     private static Map<String, String> CITIES_MAP = new HashMap<String, String>();
+    private static Properties prop = new Properties();
     static {
     //private static Map<String, String> CITIES_MAP = initialize_cities();
     //private static Map<String, String> initialize_cities() {
     //    Map<String, String> CITIES_MAP = new HashMap<String, String>();
         LOG.info("Initializing cities");
         try {
-            Properties p = new Properties();
             //p.load(LocationUtils.class.getResourceAsStream("cities.txt"));
             //p.load(fis);
             //fis.close();
@@ -82,12 +82,12 @@ public class LocationUtils {
             BufferedReader bf = new BufferedReader(new InputStreamReader(input));
             //FileInputStream fis = new FileInputStream("cities.txt");
             //BufferedReader bf = new BufferedReader(new InputStreamReader(fis));
-            p.load(bf); 
+            prop.load(bf);
             bf.close();
-            Enumeration<?> keys = p.keys();
+            Enumeration<?> keys = prop.keys();
             while (keys.hasMoreElements()) {
                 String key = (String) keys.nextElement();
-                String[] values = p.getProperty(key).split(",", -1);
+                String[] values = prop.getProperty(key).split(",", -1);
                 for (int i = 0; i < values.length; i++) {
                     CITIES_MAP.put(values[i].trim().toLowerCase(), new String(key.getBytes(), "UTF-8"));
                     if (LOG.isDebugEnabled()) LOG.debug("Adding " + values[i] + "  " + key);
@@ -136,7 +136,32 @@ public class LocationUtils {
         }
         return format(d);
     }
+    public static String tokenize(String d) {
+        StringBuilder result = new StringBuilder();
+        try {
+            Perl5Util plutil = new Perl5Util();
+            d = plutil.substitute("s/\\s*\\/\\s*/,/g", d);
+            d = plutil.substitute("s/\\s*or\\s*/,/g", d);
+            d = plutil.substitute("s/\\s*\\(\\s*/,/g", d);
+            d = plutil.substitute("s/\\s*\\)\\s*/,/g", d);
+            d = plutil.substitute("s/\\s*;\\s*/,/g", d);
+            d = plutil.substitute("s/\\s*-\\s*/,/g", d);
+            //d = plutil.substitute("s/\\s+/,/g", d);
+        } catch ( Exception e ) {}
 
+        StringTokenizer tokenizer = new StringTokenizer(d, ",");
+        while (tokenizer.hasMoreTokens()) {
+            String actualToken = tokenizer.nextToken().trim().toLowerCase();
+            String out = CITIES_MAP.get(actualToken);
+            if (out != null) {
+                result.append(out);
+            } else if ( prop.getProperty(actualToken) != null ) {
+                result.append(actualToken);
+            }
+            if ( tokenizer.hasMoreTokens() ) result.append(",");
+        }
+        return result.toString();
+    }
     public static void main(String args[]) {
         String    strs[] = {"hong kong", "上海市/南京市",  "中国 - 江苏 - 南京市 ", 
                   "中国 / 江苏 / 南京市 ",                 "中国 - 江苏 - 南京市  ",};
@@ -163,6 +188,19 @@ public class LocationUtils {
         try {
             for ( int i = 0; i < tests2.length; i++ ) {
                 LOG.debug(tests2[i] + " : " + format(tests2[i], reg));
+            }
+        } catch ( Exception e ) {
+            e.printStackTrace();
+        }
+
+        // Shell
+        reg = "s/(.*)?(?:or)?(?:\\/)?(.*)(?:\\(Both are options\\))?(?:preferred)?/$1,$2/g";
+        String tests3[] = {" Beijing or Shanghai (Both are options)",
+                             "China", "Shanghai/Beijing ", "Beijing or Shanghai preferred",
+                             "上海"};
+        try {
+            for ( int i = 0; i < tests3.length; i++ ) {
+                LOG.debug(tests3[i] + " : " + tokenize(tests3[i]));
             }
         } catch ( Exception e ) {
             e.printStackTrace();

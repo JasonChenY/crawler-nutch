@@ -1,0 +1,15 @@
+{ 
+    "company" : "Shell",
+    "l1_url" : "http://www.shell.com.cn/bin/shell/kenexa?q=&skillpoolGroup=&region=Asia+Pacific&country=China&siteId=5797&localeId=1033&page=1",
+    "job_list" : {
+          "l2_schema_for_jobs" : "$.string.Envelope.Unit.Packet.Payload.ResultSet.Jobs.Job",
+          "l2_schema_for_joburl": "JobDetailLink",
+          "l2_job_title": "Question[0].content",
+          "l2_job_location": "Question[3].content",
+          "l2_job_date": "LastUpdated",
+          "l2_job_description":"JobDescription",
+    },
+    "job_date_format": "yyyy MM dd",
+    "job_location_tokenize": true,
+}
+

@@ -1314,8 +1314,13 @@ public class CompanyParser implements Parser {
       /* Next Page URL */
       String nextpage_url = schema.getL2_template_for_nextpage_url();
       if ( nextpage_url.isEmpty() ) {
-          nextpage_url = doc.read(schema.getL2_schema_for_nextpage_url());
-          LOG.debug(url + " Got nextpage url: " + nextpage_url);
+          if ( !schema.getL2_schema_for_nextpage_url().isEmpty() ) {
+              nextpage_url = doc.read(schema.getL2_schema_for_nextpage_url());
+              LOG.debug(url + " Got nextpage url: " + nextpage_url);
+          } else {
+              LOG.info(url + " No nextpage to fetch, return");
+              return null;
+          }
       } else {
           LOG.debug(url + " (Normal Case) use l2_template_for_nextpage_url instead of l2_schema_for_nextpage_url");
       }
@@ -1419,8 +1424,16 @@ public class CompanyParser implements Parser {
           if ( !schema.getL2_job_location().isEmpty() ) {
               /* Intel case, L2 job_location can be ["multiple location"], should get it from L3 */
               String pattern_location = pattern_prefix + "." + schema.getL2_job_location();
-              location = doc.read(pattern_location, String.class);
+              try {
+                  location = doc.read(pattern_location, String.class);
+              } catch (com.jayway.jsonpath.PathNotFoundException e) {
+                  LOG.warn("Failed to get L2 job location via " + pattern_location);
+              }
+
               location = LocationUtils.format(location, schema.getJob_location_format_regex());
+              if (schema.getJob_location_tokenize()) {
+                  location = LocationUtils.tokenize(location);
+              }
           }
 
           String date = "";
@@ -1486,15 +1499,21 @@ public class CompanyParser implements Parser {
                   */
               String pattern_l2_description = schema.getL2_job_description();
               if ( !pattern_l2_description.isEmpty()) {
-                  pattern_l2_description = pattern_prefix + pattern_l2_description;
-
-                  Map<String, String> descs = doc.read(pattern_l2_description, Map.class);
                   String l2_description = "";
-                  for ( String value : descs.values() ) {
-                      l2_description += value;
-                      l2_description += "<BR/>";
+                  if ( pattern_l2_description.startsWith("[") ) {
+                      // list of fields, Alibaba
+                      pattern_l2_description = pattern_prefix + pattern_l2_description;
+                      Map<String, String> descs = doc.read(pattern_l2_description, Map.class);
+                      l2_description = "";
+                      for (String value : descs.values()) {
+                          l2_description += value;
+                          l2_description += "<BR/>";
+                      }
+                  } else {
+                      // a single field, Shell
+                      pattern_l2_description = pattern_prefix + "." + pattern_l2_description;
+                      l2_description = doc.read(pattern_l2_description, String.class);
                   }
-
                   newPage.setText(new Utf8(l2_description));
                   newPage.setTitle(new Utf8(title));
                   newPage.setContent(ByteBuffer.wrap(new byte[0]));
