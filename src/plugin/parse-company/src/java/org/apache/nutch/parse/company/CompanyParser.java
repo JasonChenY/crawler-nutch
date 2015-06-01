@@ -419,8 +419,23 @@ public class CompanyParser implements Parser {
        * but becasue of different data type, it make the code even unreadable,
        * Unforturnately we wont have more cases till now
        */
-      if ( content_type.toLowerCase().contains("html") ||
-              content_type.toLowerCase().contains("text/plain")   ) {
+      if ( content_type.toLowerCase().contains("json") ) {
+          /* Create JsonReader Context, from that to parse */
+          com.jayway.jsonpath.Configuration JSON_SMART_CONFIGURATION = com.jayway.jsonpath.Configuration.defaultConfiguration();
+          DocumentContext doc = JsonPath.parse(input.getByteStream(), JSON_SMART_CONFIGURATION);
+          if ( CompanyUtils.isEntryLink(page)) {
+              parse = getParse_entry_json(url, page, schema, doc);
+              parse = getParse_list_json(parse, url, page, schema, doc);
+          } else if ( CompanyUtils.isListLink(page)) {
+              parse = getParse_list_json(null, url, page, schema, doc);
+          } else if ( CompanyUtils.isSummaryLink(page)) {
+              /* Summary Page in JSON format (Huawei) */
+              parse = getParse_summary_json(url, page, schema, doc);
+          }
+      } else {
+      //Default case
+      //if ( content_type.toLowerCase().contains("html") ||
+      //        content_type.toLowerCase().contains("text/plain")   ) {
         /* parsing with NEKO DOM parser */
         DOMParser parser = new DOMParser();
         try {
@@ -492,19 +507,6 @@ public class CompanyParser implements Parser {
         } catch (SAXException e) {
           LOG.warn("Failed to parse " + url + " with DOMParser " + e.getMessage());
         }       
-      } else if ( content_type.toLowerCase().contains("json") ) {
-          /* Create JsonReader Context, from that to parse */
-          com.jayway.jsonpath.Configuration JSON_SMART_CONFIGURATION = com.jayway.jsonpath.Configuration.defaultConfiguration();
-          DocumentContext doc = JsonPath.parse(input.getByteStream(), JSON_SMART_CONFIGURATION);
-          if ( CompanyUtils.isEntryLink(page)) {
-              parse = getParse_entry_json(url, page, schema, doc);
-              parse = getParse_list_json(parse, url, page, schema, doc);
-          } else if ( CompanyUtils.isListLink(page)) {
-              parse = getParse_list_json(null, url, page, schema, doc);
-          } else if ( CompanyUtils.isSummaryLink(page)) {
-              /* Summary Page in JSON format (Huawei) */
-              parse = getParse_summary_json(url, page, schema, doc);
-          }
       }
     } catch (MalformedURLException e) {
       LOG.error("Failed to generate target URL");

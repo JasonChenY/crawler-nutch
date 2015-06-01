@@ -25,7 +25,7 @@
   <!--  by default if the mimeType is set to *, or 
         if it can't be determined, use parse-tika -->
 	<mimeType name="*">
-	  <plugin id="parse-tika" />
+	  <plugin id="parse-company" />
 	</mimeType>
 
 	<mimeType name="text/html">
