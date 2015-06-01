@@ -578,7 +578,23 @@ public class CompanyParser implements Parser {
        * Note not all company will have the last page number to iterate,
        * e.g Microsoft, if so, we fallback to 'click' on the 'Next' button
        * */
-      if ( !schema.getL2_last_page().isEmpty() ) {
+      if ( !schema.getL2_last_page_multiplier().isEmpty() ) {
+          // Daimler case
+          String last_page_multiplier = schema.getL2_last_page_multiplier();
+          expr = xpath.compile(last_page_multiplier);
+          last_page_multiplier = (String) expr.evaluate(doc, XPathConstants.STRING);
+          LOG.debug(url + " Got last page multiplier: " + last_page_multiplier);
+          int last = 0;
+          try {
+              last = Integer.parseInt(last_page_multiplier);
+              int incr = Integer.parseInt(schema.getL2_nextpage_increment());
+              last = last * incr;
+          } catch (NumberFormatException e) {
+              LOG.error(url + " failed to parse last page");
+              return null;
+          }
+          return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
+      } else if ( !schema.getL2_last_page().isEmpty() ) {
           String last_page = schema.getL2_last_page();
           expr = xpath.compile(last_page);
           last_page = (String) expr.evaluate(doc, XPathConstants.STRING);

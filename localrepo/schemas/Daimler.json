@@ -1,0 +1,22 @@
+{ 
+   "company" : "Daimler",
+   "l1_url" : "http://www.daimlercareer.cn/job/search?mode=EXPERIENCED_HIRE",
+   "l1_method" : "POST",
+   "l1_postdata" : "keyword=&department=ALL&city=ALL&sortDate=desc",
+   "page_list" : {
+       "l2_template_for_nextpage_url": "http://www.daimlercareer.cn/job/search?mode=EXPERIENCED_HIRE&keyword=&department=ALL&city=ALL&offset=10&max=10",
+       "l2_nextpage_regex":"s/(.*offset=)(\\d*)(.*)/$1-deadbeaf-$3/g",
+       "l2_nextpage_increment":"10",
+       "l2_last_page_multiplier"  : "//DIV[@class='pager']/A[last()-1]/text()",
+   },
+   "job_list": {
+        "l2_schema_for_jobs" : "//TBODY[@id='search_list_result']/TR",
+        "l2_schema_for_joburl" : "./TD[1]/A/@href",
+        "l2_job_title" : "./TD[1]/A/text()",
+        "l2_job_location" : "./TD[3]/DIV/text()",
+        "l2_job_date" : "./TD[4]/text()"
+   },
+   "job": {
+        "l3_job_description" : "//DIV[@id='jobdetail_info_content']/DIV[1]/DIV[1]",
+   }
+}

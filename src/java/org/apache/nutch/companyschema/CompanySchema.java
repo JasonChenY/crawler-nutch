@@ -44,6 +44,9 @@ public class CompanySchema {
        Using regex to generate the Math string, then in code to calcuate the total page number.
      */
     private String l2_regex_matcher_for_jobnbr;
+    /* Daimler case, where the increment is 10, but can only find last page number 30
+     * then we should use this multiplier to get the total job number 300 to loop */
+    private String l2_last_page_multiplier;
 
     /* fields for Microsoft kind of site */
     private String l2_nextpage_postdata_inherit_regex;
@@ -100,6 +103,7 @@ public class CompanySchema {
         setL2_nextpage_increment("1");
         setL2_last_page("");
         setL2_regex_matcher_for_jobnbr("");
+        setL2_last_page_multiplier("");
 
         setL2_nextpage_postdata_inherit_regex("");
         setL2_nextpage_endflag("");
@@ -256,6 +260,14 @@ public class CompanySchema {
 
     public void setL2_regex_matcher_for_jobnbr(String l2_regex_matcher_for_jobnbr) {
         if (l2_regex_matcher_for_jobnbr != null) this.l2_regex_matcher_for_jobnbr = l2_regex_matcher_for_jobnbr;
+    }
+
+    public String getL2_last_page_multiplier() {
+        return l2_last_page_multiplier;
+    }
+
+    public void setL2_last_page_multiplier(String l2_last_page_multiplier) {
+        if (l2_last_page_multiplier != null) this.l2_last_page_multiplier = l2_last_page_multiplier;
     }
 
     public String getL2_nextpage_postdata_inherit_regex() {

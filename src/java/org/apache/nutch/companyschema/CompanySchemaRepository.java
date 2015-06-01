@@ -127,6 +127,7 @@ public class CompanySchemaRepository {
               companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
               companySchema.setL2_last_page((String) page_list.get("l2_last_page"));
               companySchema.setL2_regex_matcher_for_jobnbr((String) page_list.get("l2_regex_matcher_for_jobnbr"));
+              companySchema.setL2_last_page_multiplier((String) page_list.get("l2_last_page_multiplier"));
 
               companySchema.setL2_nextpage_postdata_inherit_regex((String) page_list.get("l2_nextpage_postdata_inherit_regex"));
               companySchema.setL2_nextpage_endflag((String) page_list.get("l2_nextpage_endflag"));
