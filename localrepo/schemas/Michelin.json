@@ -1,0 +1,15 @@
+{ 
+    "company" : "Michelin",
+    "l1_url" : "http://www.michelincareers.com/cn/chi/layout/set/offre_result",
+    "l1_method" : "POST",
+    "job_list" : {
+          "l2_schema_for_jobs" : "//TABLE[@id='lastjobs']/TBODY/TR",
+          "l2_schema_for_joburl": "./TD[1]/A/@href",
+          "l2_job_title": "./TD[1]/A/text()",
+          "l2_job_location": "./TD[3]/text()",
+    },
+    "job": {
+          "l3_job_description" : "//DIV[@class='job-desc']",
+     }
+}
+
