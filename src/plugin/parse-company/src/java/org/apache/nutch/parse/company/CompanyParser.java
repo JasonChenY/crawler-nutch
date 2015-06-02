@@ -1230,6 +1230,16 @@ public class CompanyParser implements Parser {
           l3_title = SolrUtils.stripNonCharCodepoints(l3_title);
       }
 
+      String company_subname = "";
+      if ( !schema.getL3_company_subname().isEmpty() ) {
+          //Cofco case
+          expr = xpath.compile(schema.getL3_company_subname());
+          company_subname = (String) expr.evaluate(doc, XPathConstants.STRING);
+          if ( company_subname != null ) {
+              page.getMetadata().put(CompanyUtils.company_subname, ByteBuffer.wrap(company_subname.getBytes()));
+          }
+      }
+
       String l3_date = "";
       if ( !schema.getL3_job_date().isEmpty() ) {
           expr = xpath.compile(schema.getL3_job_date());

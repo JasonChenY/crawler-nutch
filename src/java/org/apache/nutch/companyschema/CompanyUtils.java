@@ -8,6 +8,7 @@ import java.nio.ByteBuffer;
 public class CompanyUtils {
 
     public static Utf8 company_key = new Utf8("__company__");
+    public static Utf8 company_subname = new Utf8("__company_subname__");
     public static Utf8 company_dyn_data = new Utf8("__company_dyn_data__");
     public static Utf8 company_link_type = new Utf8("__company_link_type__");
 
