@@ -1,0 +1,18 @@
+{ 
+    "company" : "Dupont",
+    "l1_url" : "http://careers.dupont.com/jobsearch/ajax-callbacks/getJobs.php?organization=All+Job+Organizations&category=All+Job+Categories&location=All+Job+Locations&keyword=&country=China&Entry+Level=1&Experienced=1&Internship=1&_=1433253648117",
+    "l1_method" : "POST",
+    "job_list" : {
+          "l2_schema_for_jobs" : "$.jobs",
+          "l2_schema_for_joburl": "url",
+          "l2_job_title": "titleDisplay",
+          "l2_job_location": "locationDisplay",
+    },
+    "job": {
+          "l3_job_date":"//DIV[@id='sidebar-wrapper']/DIV/P[9]/text()",
+          "l3_job_description" : "//DIV[@class='job-desc']",
+    },
+    "job_location_format_regex": "s/China - //g",
+    "job_location_tokenize": true,
+}
+

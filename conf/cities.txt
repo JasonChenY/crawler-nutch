@@ -19,7 +19,7 @@
 天津=Tianjing
 珠海=Zhuhai
 台北=ZHO_Taipei
-全国=Any
+全国=Any,China,
 成都=Chengdu
 新加坡=singapore
 合肥=Hefei
@@ -30,6 +30,7 @@
 郑州=Zhengzhou
 中山=Zhongshan
 青岛=Qingdao
+
 
 
 

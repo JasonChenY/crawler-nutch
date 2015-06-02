@@ -138,6 +138,7 @@ public class LocationUtils {
     }
     public static String tokenize(String d) {
         StringBuilder result = new StringBuilder();
+        HashSet<String> localSet = new HashSet<String>();
         try {
             Perl5Util plutil = new Perl5Util();
             d = plutil.substitute("s/\\s*\\/\\s*/,/g", d);
@@ -149,27 +150,27 @@ public class LocationUtils {
             //d = plutil.substitute("s/\\s+/,/g", d);
         } catch ( Exception e ) {}
 
-        boolean first = true;
         StringTokenizer tokenizer = new StringTokenizer(d, ",");
         while (tokenizer.hasMoreTokens()) {
             String actualToken = tokenizer.nextToken().trim().toLowerCase();
             String out = CITIES_MAP.get(actualToken);
             if (out != null) {
-                if ( first ) {
-                    result.append(out);
-                    first = false;
-                } else {
-                    result.append("," + out);
-                }
+                localSet.add(out);
             } else if ( prop.getProperty(actualToken) != null ) {
-                if ( first ) {
-                    result.append(actualToken);
-                    first = false;
-                } else {
-                    result.append("," + actualToken);
-                }
+                localSet.add(actualToken);
             }
         }
+        Iterator<String> iterator=localSet.iterator();
+        boolean first=true;
+        while(iterator.hasNext()){
+            if (first) {
+                result.append(iterator.next());
+                first = false;
+            } else {
+                result.append(","+iterator.next());
+            }
+        }
+        if ( first ) { result.append("全国"); }
         return result.toString();
     }
     public static void main(String args[]) {
@@ -203,14 +204,14 @@ public class LocationUtils {
             e.printStackTrace();
         }
 
-        // Shell
-        reg = "s/(.*)?(?:or)?(?:\\/)?(.*)(?:\\(Both are options\\))?(?:preferred)?/$1,$2/g";
-        String tests3[] = {" Beijing or Shanghai (Both are options)",
-                             "China", "Shanghai/Beijing ", "Beijing or Shanghai preferred",
-                             "上海"};
+        // Dupont
+        String tests3[] = {"China - Fujian - Zhangzhou",
+                           "China - NonOfficeBased(Province) -... ",
+                           "China - Beijing - Nanjing, Chaoyang",
+                           "China - Shanghai - Shanghai" };
         try {
             for ( int i = 0; i < tests3.length; i++ ) {
-                LOG.debug(tests3[i] + " : " + tokenize(tests3[i]));
+                LOG.debug(tests3[i] + " : " + tokenize(format(tests3[i],"s/China - //g")));
             }
         } catch ( Exception e ) {
             e.printStackTrace();

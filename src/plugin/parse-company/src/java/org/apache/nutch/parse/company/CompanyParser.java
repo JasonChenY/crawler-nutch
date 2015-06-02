@@ -1411,6 +1411,14 @@ public class CompanyParser implements Parser {
               continue;
           }
 
+          try {
+              //Dupont url in json file is encoded
+              newurl = URLDecoder.decode(newurl, "utf-8");
+          } catch ( Exception e) {
+              LOG.warn("job url is incorrect, ignore " + newurl);
+              continue;
+          }
+
           if ( !schema.getL2_template_for_joburl().isEmpty() && !schema.getL2_joburl_regex().isEmpty() ) {
               String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), newurl);
               newurl = plUtil.substitute(newregex, schema.getL2_template_for_joburl());
