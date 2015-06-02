@@ -330,6 +330,8 @@ public class DateUtils {
                     d = plutil.substitute("s/\\D*(\\d{4})[^-]*-\\D*(\\d{1,})[^-]*-\\D*(\\d{1,})/$1-$2-$3/g", d);
                 } else if ( format.equals("yyyy MM dd") ) {
                     d = plutil.substitute("s/\\D*(\\d{4})\\S*\\s\\D*(\\d{1,})\\S*\\s\\D*(\\d{1,})/$1-$2-$3/g", d);
+                } else if ( format.equals("yyyy/MM/dd") ) {
+                    d = plutil.substitute("s#\\D*(\\d{4})*[^/]*/[^\\d]*(\\d{1,})[^/]*/[^\\d]*(\\d{1,})#$1-$2-$3#g", d);
                 }
             } catch (MalformedPerl5PatternException me ) {
                 LOG.warn("datestring " + d + " cant be matched with " + format);
@@ -355,9 +357,9 @@ public class DateUtils {
     }
     public static void main(String args[]) {
         String    strs[] = {"m06a - a19b - c2014", "April a15b   year2014a", "April-a15b-year2014a", "d19a   m06b  y2014c",
-                "y2014a-m6b - d19c - "};
+                "y2014a-m6b - d19c - ", "2015/3/21"};
         String formats[] = {"MM-dd-yyyy", "MMM dd yyyy" , "MMM-dd-yyyy", "dd MM yyyy",
-                "yyyy-MM-dd" };
+                "yyyy-MM-dd", "yyyy/MM/dd" };
         try {
             for ( int i = 0; i < strs.length; i++ ) {
                 String str = strs[i];
