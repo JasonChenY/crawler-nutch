@@ -1,0 +1,20 @@
+{ 
+   "company" : "Fedex",
+   "l1_url" : "http://search.51job.com/list/co,c,2442420,000000,10,1.html",
+   "page_list" : {
+       "l2_template_for_nextpage_url" : "http://search.51job.com/list/co,c,2442420,000000,10,2.html",
+       "l2_nextpage_regex":"s/(.*000000,10,)(\\d+)(\\.html)/$1-deadbeaf-$3/g",
+       "l2_last_page"  : "//TABLE[@class='searchPageNav']/TBODY/TR/TD[last()-1]/A/text()",
+   },
+   "job_list": {
+        "l2_schema_for_jobs" : "//TABLE[@class='jobs_1 coJobList']/TBODY/TR[4]",
+        "l2_schema_for_joburl" : "./TD[1]/A/@href",
+        "l2_job_title" : "./TD[1]/A/text()",
+        "l2_job_location" : "./TD[2]/text()",
+        "l2_job_date" : "./TD[3]/text()",
+   },
+   "job": {
+        "l3_job_description" : "//TD[@class='txt_4 wordBreakNormal job_detail ']",
+   },
+   "job_date_format": "yyyy-MM-dd",
+}
