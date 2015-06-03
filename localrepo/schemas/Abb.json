@@ -1,0 +1,32 @@
+{ 
+    "company" : "Abb",
+    "l1_url" : "http://new.abb.com/api/joboffers/getjobs",
+    "l1_method" : "POST",
+    "l1_postdata" : "{\"Country\":\"CN\",\"City\":\"\",\"Function\":\"\",\"Role\":\"\",\"Phrase\":\"\",\"Language\":\"zh\",\"SortType\":\"LuceneScore\",\"SortOrder\":\"Asc\",\"PageNumber\":1,\"CountPerPage\":10}",
+    "post_content_type" : "application/json",
+    "page_list" : {
+          "l2_template_for_nextpage_url" : "http://new.abb.com/api/joboffers/getjobs",
+          "l2_nextpage_method" : "POST",
+          "l2_template_for_nextpage_postdata" : "{\"Country\":\"CN\",\"City\":\"\",\"Function\":\"\",\"Role\":\"\",\"Phrase\":\"\",\"Language\":\"zh\",\"SortType\":\"LuceneScore\",\"SortOrder\":\"Asc\",\"PageNumber\":2,\"CountPerPage\":10}",
+          "l2_nextpage_regex" : "s/(.*\"PageNumber\":)(\\d+)(.*)/$1-deadbeaf-$3/g",
+          "l2_nextpage_increment":"1",
+          "l2_schema_for_jobnbr" : "$.Conditions.MatchedOffersCount",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "$.Offers",
+          "l2_template_for_joburl": "http://new.abb.com/cn/careers/job-advertisement/details/56965029/mechanical-enginner",
+          "l2_joburl_regex" : "s#(.*details/)(\\d+)/(.*)#$1-deadbeaf-/-deadbeaf-#g",
+          "RegexReplaceParts" : [
+              "Id",
+              "HeaderFriendlyUrl",
+          ],
+          "l2_job_title" : "HeaderTxt",
+          "l2_job_date" : "StartDate",
+          "l2_job_location" : "City",
+    },
+    "job" : {
+          "l3_job_description":"//DIV[@class='joSectionHeader' or @class='joSection']",
+    },
+    "job_date_format": "yyyy-MM-dd",
+}
+

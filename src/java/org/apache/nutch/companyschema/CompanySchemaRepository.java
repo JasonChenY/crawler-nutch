@@ -23,6 +23,7 @@ import org.json.simple.parser.ContentHandler;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.json.simple.JSONValue;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import java.io.FileReader;
 import java.util.ArrayList;
@@ -127,6 +128,8 @@ public class CompanySchemaRepository {
               companySchema.setL2_nextpage_increment((String) page_list.get("l2_nextpage_increment"));
               companySchema.setL2_last_page((String) page_list.get("l2_last_page"));
               companySchema.setL2_regex_matcher_for_jobnbr((String) page_list.get("l2_regex_matcher_for_jobnbr"));
+              companySchema.setL2_schema_for_jobnbr((String) page_list.get("l2_schema_for_jobnbr"));
+
               companySchema.setL2_last_page_multiplier((String) page_list.get("l2_last_page_multiplier"));
 
               companySchema.setL2_nextpage_postdata_inherit_regex((String) page_list.get("l2_nextpage_postdata_inherit_regex"));
@@ -140,6 +143,9 @@ public class CompanySchemaRepository {
               companySchema.setL2_template_for_joburl((String) job_list.get("l2_template_for_joburl"));
               companySchema.setL2_template_for_joburl_repr((String) job_list.get("l2_template_for_joburl_repr"));
               companySchema.setL2_joburl_regex((String) job_list.get("l2_joburl_regex"));
+              if ( job_list.get("RegexReplaceParts") != null ) {
+                  companySchema.regexReplaceParts = (JSONArray)job_list.get("RegexReplaceParts");
+              }
               companySchema.setL2_schema_for_joburl((String) job_list.get("l2_schema_for_joburl"));
               companySchema.setL2_schema_for_joburl_repr((String) job_list.get("l2_schema_for_joburl_repr"));
               companySchema.setL2_job_title((String) job_list.get("l2_job_title"));
@@ -194,6 +200,7 @@ public class CompanySchemaRepository {
     }
     CompanySchemaRepository repo = CompanySchemaRepository.getInstance("/sdk/tools/apache-nutch-2.3/localrepo/schemas");
     CompanySchema d = repo.getCompanySchema(args[0]);
+    d.print();
     if (d == null) {
       System.err.println("Company Schema '" + args[0] + "' not present");
       return;

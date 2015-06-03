@@ -643,6 +643,23 @@ public class CompanyParser implements Parser {
           }*/
 
           return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
+      } else if ( !schema.getL2_schema_for_jobnbr().isEmpty() ) {
+          // Abb case
+          String jobnbr = schema.getL2_schema_for_jobnbr();
+          expr = xpath.compile(jobnbr);
+          jobnbr = (String) expr.evaluate(doc, XPathConstants.STRING);
+          LOG.debug(url + " Got total jobr nbr: " + jobnbr);
+          int last = 0;
+          try {
+              last = Integer.parseInt(jobnbr);
+          } catch (NumberFormatException e) {
+              LOG.error(url + " failed to parse last page");
+              return null;
+          }
+          double d = last / 10;
+          last = ((int) (Math.floor(d))) + 1;
+
+          return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
       } else {
           /* fallback to 'click' 'Next' button
            * Following two meta data should appear to decide when to finish the iterate.
@@ -810,6 +827,27 @@ public class CompanyParser implements Parser {
       String newregex = regex.replaceAll("-deadbeaf-", "\\\\"+substitute);
       /* this can be extended with again Perl5 Regex later if necessary for other usecases */
       return newregex;
+  }
+  private String generate_regex_for_nextitem(String src_regex, List<String> substitutes) {
+      StringBuffer result = new StringBuffer();
+      int index = 0;
+      try {
+          Pattern pattern = Pattern.compile("-deadbeaf-");
+          Matcher matcher = pattern.matcher(src_regex);
+
+          while (matcher.find()) {
+              if ( index == substitutes.size() ) {
+                  LOG.error("src_regex's deadbeaf not match the number in substitutes");
+                  break;
+              }
+              matcher.appendReplacement(result, "\\\\"+substitutes.get(index));
+              index++;
+          }
+          matcher.appendTail(result);
+      } catch (PatternSyntaxException e) {
+          LOG.warn("Failed to generate regex from : " + src_regex + " : " + e);
+      }
+      return result.toString();
   }
   private int get_startitem_from_regex(String regex, String input) throws MalformedPerl5PatternException {
       try {
@@ -1345,15 +1383,31 @@ public class CompanyParser implements Parser {
       } */
 
       /* Last Page Number */
-      String last_page = schema.getL2_last_page();
-      last_page = doc.read(last_page, String.class);
-      LOG.debug(url + " Got last page: " + last_page);
       int last = 0;
-      try {
-          last = Integer.parseInt(last_page);
-      } catch (NumberFormatException e) {
-          LOG.error(url + " failed to parse last page");
-          return null;
+      if ( !schema.getL2_last_page().isEmpty() ) {
+          String last_page = schema.getL2_last_page();
+          last_page = doc.read(last_page, String.class);
+          LOG.debug(url + " Got last page: " + last_page);
+
+          try {
+              last = Integer.parseInt(last_page);
+          } catch (NumberFormatException e) {
+              LOG.error(url + " failed to parse last page");
+              return null;
+          }
+      }  else if ( !schema.getL2_schema_for_jobnbr().isEmpty() ) {
+          // Abb case
+          String jobnbr = schema.getL2_schema_for_jobnbr();
+          jobnbr = (String) doc.read(jobnbr, String.class);
+          LOG.debug(url + " Got total jobr nbr: " + jobnbr);
+          try {
+              last = Integer.parseInt(jobnbr);
+          } catch (NumberFormatException e) {
+              LOG.error(url + " failed to parse last page");
+              return null;
+          }
+          double d = last / 10;
+          last = ((int) (Math.floor(d))) + 1;
       }
 
       return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
@@ -1404,26 +1458,38 @@ public class CompanyParser implements Parser {
                * String link = JsonPath.read(job, schema.getL2_schema_for_joburl());
                */
           String pattern_prefix = schema.getL2_schema_for_jobs() + "[" + Integer.toString(i) + "]";
+          String newurl="";
+          if (schema.regexReplaceParts != null) {
+              List<String> substitues = new ArrayList<String>();
+              for ( int ii = 0; ii < schema.regexReplaceParts.size(); ii++) {
+                  String pattern = pattern_prefix + "." + schema.regexReplaceParts.get(ii);
+                  String result = doc.read(pattern, String.class);
+                  substitues.add(result);
+              }
 
-          String pattern_url = pattern_prefix + "." + schema.getL2_schema_for_joburl();
-          String newurl = doc.read(pattern_url, String.class);
-          if ( newurl.isEmpty() ) {
-              continue;
-          }
-
-          try {
-              //Dupont url in json file is encoded
-              newurl = URLDecoder.decode(newurl, "utf-8");
-          } catch ( Exception e) {
-              LOG.warn("job url is incorrect, ignore " + newurl);
-              continue;
-          }
-
-          if ( !schema.getL2_template_for_joburl().isEmpty() && !schema.getL2_joburl_regex().isEmpty() ) {
-              String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), newurl);
+              String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), substitues);
+              if (LOG.isDebugEnabled() LOG.debug("newregex: " + newregex);
               newurl = plUtil.substitute(newregex, schema.getL2_template_for_joburl());
-          }
+          } else {
+              String pattern_url = pattern_prefix + "." + schema.getL2_schema_for_joburl();
+              newurl = doc.read(pattern_url, String.class);
+              if (newurl.isEmpty()) {
+                  continue;
+              }
 
+              try {
+                  //Dupont url in json file is encoded
+                  newurl = URLDecoder.decode(newurl, "utf-8");
+              } catch (Exception e) {
+                  LOG.warn("job url is incorrect, ignore " + newurl);
+                  continue;
+              }
+
+              if (!schema.getL2_template_for_joburl().isEmpty() && !schema.getL2_joburl_regex().isEmpty()) {
+                  String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), newurl);
+                  newurl = plUtil.substitute(newregex, schema.getL2_template_for_joburl());
+              }
+          }
           /*Dont use format even though it is convenient,
           * because not sure any site carry invalid url for format,
           * aiming for a consistent regex handling as l2 pageurl/postdata

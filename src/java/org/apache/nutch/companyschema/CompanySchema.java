@@ -16,9 +16,21 @@
  */
 package org.apache.nutch.companyschema;
 
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import org.json.simple.parser.ContainerFactory;
+import org.json.simple.parser.ContentHandler;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
+import org.json.simple.JSONValue;
+import org.json.simple.JSONObject;
+import org.json.simple.JSONArray;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.LinkedHashMap;
+import java.util.Iterator;
 
 public class CompanySchema {
     private String name;
@@ -44,9 +56,15 @@ public class CompanySchema {
        Using regex to generate the Math string, then in code to calcuate the total page number.
      */
     private String l2_regex_matcher_for_jobnbr;
+
+    //Abb can only get total job nbr in json doc
+    private String l2_schema_for_jobnbr;
+
     /* Daimler case, where the increment is 10, but can only find last page number 30
      * then we should use this multiplier to get the total job number 300 to loop */
     private String l2_last_page_multiplier;
+
+
 
     /* fields for Microsoft kind of site */
     private String l2_nextpage_postdata_inherit_regex;
@@ -59,6 +77,9 @@ public class CompanySchema {
     private String l2_template_for_joburl;
     private String l2_template_for_joburl_repr; /* For Huawei, one url for fetch json, this url for apply */
     private String l2_joburl_regex;
+
+    public List<String> regexReplaceParts = null;
+
     private String l2_schema_for_joburl;
     private String l2_schema_for_joburl_repr; /* For Danone, one url for fetch pdf, another(repr) for apply */
     private String l2_job_title;
@@ -108,6 +129,8 @@ public class CompanySchema {
         setL2_nextpage_increment("1");
         setL2_last_page("");
         setL2_regex_matcher_for_jobnbr("");
+        setL2_schema_for_jobnbr("");
+
         setL2_last_page_multiplier("");
 
         setL2_nextpage_postdata_inherit_regex("");
@@ -267,6 +290,14 @@ public class CompanySchema {
 
     public void setL2_regex_matcher_for_jobnbr(String l2_regex_matcher_for_jobnbr) {
         if (l2_regex_matcher_for_jobnbr != null) this.l2_regex_matcher_for_jobnbr = l2_regex_matcher_for_jobnbr;
+    }
+
+    public String getL2_schema_for_jobnbr() {
+        return l2_schema_for_jobnbr;
+    }
+
+    public void setL2_schema_for_jobnbr(String l2_schema_for_jobnbr) {
+        if (l2_schema_for_jobnbr != null) this.l2_schema_for_jobnbr = l2_schema_for_jobnbr;
     }
 
     public String getL2_last_page_multiplier() {
@@ -487,6 +518,7 @@ public class CompanySchema {
         System.out.println("l2_nextpage_increment : " + l2_nextpage_increment);
         System.out.println("l2_last_page : " + l2_last_page);
         System.out.println("l2_regex_matcher_for_jobnbr : " + l2_regex_matcher_for_jobnbr);
+        System.out.println("l2_schema_for_jobnbr : " + l2_schema_for_jobnbr);
         System.out.println("l2_last_page_multiplier : " + l2_last_page_multiplier);
         System.out.println("  ");
         System.out.println("l2_nextpage_postdata_inherit_regex : " + l2_nextpage_postdata_inherit_regex);
