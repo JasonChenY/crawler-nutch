@@ -1,0 +1,19 @@
+{ 
+   "company" : "Boeing",
+   "l1_url" : "http://jobs-boeing.com/all-china-jobs/job-list-1",
+   "page_list" : {
+        "l2_schema_for_nextpage_url" : "//A[@id='jobs_next_page_link']/@href",
+        "l2_nextpage_endflag":"//A[@id='jobs_next_page_link']",
+   },
+   "job_list": {
+        "l2_schema_for_jobs" : "//TABLE[@class='info-table']/TBODY/TR",
+        "l2_schema_for_joburl" : "./TD[1]/A[not(@class='pagination-more')]/@href",
+        "l2_job_title" : "./TD[1]/A/text()",
+        "l2_job_location" : "./TD[2]/text()",
+        "l2_job_date" : "./TD[3]/text()"
+   },
+   "job": {
+        "l3_job_description" : "//DIV[@id='jobDesc']",
+   },
+   "job_location_format_regex" : "s/([^,]*).*/$1/g",
+}

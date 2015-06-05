@@ -660,14 +660,14 @@ public class CompanyParser implements Parser {
           last = ((int) (Math.floor(d))) + 1;
 
           return generate_next_pages(url, page, nextpage_url, schema, last, page.getScore() * 0.95f);
-      } else {
+      } else if ( !schema.getL2_nextpage_endflag().isEmpty() ) {
           /* fallback to 'click' 'Next' button
            * Following two meta data should appear to decide when to finish the iterate.
            * l2_nextpage_postdata_inherit_regex
            * l2_nextpage_endflag
            */
           return generate_next_page(url, page, nextpage_url, schema , doc, xpath, page.getScore() * 0.99f);
-      }
+      } else return null;
   }
   private Parse generate_next_page(String url, WebPage page, String nextpage_url, CompanySchema schema, Document doc, XPath xpath, float score)
           throws XPathExpressionException{
@@ -678,6 +678,22 @@ public class CompanyParser implements Parser {
       if ( rows == null || rows.getLength() == 0 ) {
           LOG.info(url + " reach last Page");
           return null;
+      }
+
+      if ( regex.isEmpty() ) {
+          //Boeing
+          ParseStatus status = ParseStatus.newBuilder().build();
+          status.setMajorCode((int) ParseStatusCodes.SUCCESS);
+          Parse parse = new Parse("next page", "next page", new Outlink[0], status);
+          WebPage newPage = WebPage.newBuilder().build();
+          newPage.setStatus((int) CrawlStatus.STATUS_UNFETCHED);
+          CompanyUtils.setCompanyName(newPage, schema.getName());
+          CompanyUtils.setEntryLink(newPage);
+          newPage.getMarkers().put(DbUpdaterJob.DISTANCE, new Utf8(Integer.toString(0)));
+          newPage.setScore(score);
+          newPage.getMetadata().put(CompanyUtils.company_cookie, page.getMetadata().get(CompanyUtils.company_cookie));
+          parse.addPage(nextpage_url, newPage);
+          return parse;
       } else {
           LOG.debug(url + " generate_next_page's POST data");
           String origcontent = new String(page.getContent().array());
@@ -693,47 +709,12 @@ public class CompanyParser implements Parser {
                   LOG.debug("Matcher found: " + key + " --> ");
                   substitue_params.add(new BasicNameValuePair(key, value));
               }
-              /*
-              final PatternCompiler cp = new Perl5Compiler();
-              final org.apache.oro.text.regex.Pattern pattern = cp.compile(regex, Perl5Compiler.CASE_INSENSITIVE_MASK | Perl5Compiler.READ_ONLY_MASK | Perl5Compiler.MULTILINE_MASK);
-              final PatternMatcher matcher = new Perl5Matcher();
-
-              final PatternMatcherInput input = new PatternMatcherInput(origcontent);
-
-              MatchResult result;
-
-              // loop the matches
-              while (matcher.contains(input, pattern)) {
-                  result = matcher.getMatch();
-                  String key = result.group(1);
-                  String value = result.group(2);
-                  LOG.debug("Matcher found: " + key + " --> ");
-                  substitue_params.add(new BasicNameValuePair(key, value));
-              }
-              */
           } catch (Exception ex) {
               LOG.warn(url + " failed to get matcher" + ex.getMessage());
           }
 
           LOG.debug(url + " get " + substitue_params.size() + " matcher via regex " + regex);
 
-          /* JDK pattern/match version
-          Pattern pattern = null;
-          try {
-              pattern = Pattern.compile(regex);
-              //pattern = Pattern.compile("\\d+\\|hiddenField\\|(__EVENTVALIDATION)\\|(.*)\\|\\d+\\|.*");
-          } catch (PatternSyntaxException e) {
-              System.out.println("Failed to compile nextpage postdata pattern: " + regex + " : " + e);
-              return ;
-          }
-
-          Matcher matcher = pattern.matcher(origcontent);
-          if ( matcher.find() ) {
-              key = matcher.group(1);
-              value = matcher.group(2);
-              System.out.println("Matcher found: " + key + " " + value);
-          }
-          */
           String newpostdata = schema.getL2_template_for_nextpage_postdata();
 
           for ( int i=0; i < substitue_params.size(); i++ ) {
@@ -759,11 +740,6 @@ public class CompanyParser implements Parser {
               newpostdata = result.toString();
           }
 
-          if ( !schema.getL2_nextpage_regex().isEmpty() ) {
-              /* shall we do the replacement again basing on schema?
-              if so, how to get the current page number ? Stupid Honeywell.
-               */
-          }
           if ( debug_save_page_content ) {
               try {
                   String date = DateUtils.getThreadLocalDateFormat().format(new Date());
@@ -1468,7 +1444,7 @@ public class CompanyParser implements Parser {
               }
 
               String newregex = generate_regex_for_nextitem(schema.getL2_joburl_regex(), substitues);
-              if (LOG.isDebugEnabled() LOG.debug("newregex: " + newregex);
+              if (LOG.isDebugEnabled()) LOG.debug("newregex: " + newregex);
               newurl = plUtil.substitute(newregex, schema.getL2_template_for_joburl());
           } else {
               String pattern_url = pattern_prefix + "." + schema.getL2_schema_for_joburl();
