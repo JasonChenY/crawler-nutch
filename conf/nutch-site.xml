@@ -140,5 +140,13 @@
     </description>
 </property>
 
+<property>
+    <name>parser.skip.truncated</name>
+    <value>false</value>
+    <description>Boolean value for whether we should skip parsing for truncated documents. By default this
+        property is activated due to extremely high levels of CPU which parsing can sometimes take.
+    </description>
+</property>
+
 </configuration>
 

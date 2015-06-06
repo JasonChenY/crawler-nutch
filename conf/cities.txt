@@ -31,6 +31,13 @@
 中山=Zhongshan
 青岛=Qingdao
 海南=Hainan, Hainan Island
+太仓=Taicang
+长沙=Changsha
+攀枝花=Panzhihua
+乌鲁木齐=Wulumuqi
+长春=Changchun
+佛山=Foshan
+
 
 
 

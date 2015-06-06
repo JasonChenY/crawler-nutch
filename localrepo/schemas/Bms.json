@@ -1,0 +1,22 @@
+{ 
+    "company" : "Bms",
+    "l1_url" : "http://careers.bms.com.cn/cn/job-list.html?doAction=search",
+    "l1_method" : "GET",
+    "page_list" : {
+          "l2_template_for_nextpage_url" : "http://careers.bms.com.cn/cn/job-list.html?doAction=search&page=2",
+          "l2_nextpage_regex" : "s/(.*page=)(\\d+)/$1-deadbeaf-/g",
+          "l2_last_page" : "//DIV[@class='paging']/SPAN[last()-1]/A/text()",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "//TABLE[@class='tab-job']/TBODY/TR[@class='color1']",
+          "l2_template_for_joburl": "http://careers.bms.com.cn/cn/job-detail/370.html",
+          "l2_joburl_regex" : "s#(.*job-detail/)(\\d+)(.*)#$1-deadbeaf-$3#g",
+          "l2_schema_for_joburl" : "substring-before(substring-after(./@onclick, 'job_view('),')')",
+          "l2_job_title": "./TD[1]/text()",
+          "l2_job_location": "./TD[3]/text()",
+    },
+    "job": {
+          "l3_job_description":"//DIV[@class='content-jd']",
+    }
+}
+
