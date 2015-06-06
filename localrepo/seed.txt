@@ -15,3 +15,15 @@ http://msdchina.51job.com/sc/job_list.php?begin=begin	Merck
 http://careers.peopleclick.com/careerscp/client_cocacola/external/zh-cn/search.do	Cocacola
 https://intel.taleo.net/careersection/rest/jobboard/searchjobs?lang=en&portal=660190084	Intel
 https://career.bayer.cn/zh/job-search/?accessLevel=&functional_area=&country=CN&location=&company=&fulltext=	Bayer
+http://astrazeneca.51job.com/index.php?begin=begin	Astrazeneca
+http://www.daimlercareer.cn/job/search?mode=EXPERIENCED_HIRE	Daimler
+http://www.shell.com.cn/bin/shell/kenexa?q=&skillpoolGroup=&region=Asia+Pacific&country=China&siteId=5797&localeId=1033&page=1	Shell
+http://www.michelincareers.com/cn/chi/layout/set/offre_result	Michelin
+http://special.zhaopin.com/bj/2013/cofco060502/search.html?keyword=%E8%BE%93%E5%85%A5%E8%81%8C%E4%BD%8D%E5%85%B3%E9%94%AE%E5%AD%97&division=&funtype=&jobarea=	Cofco
+http://careers.accenture.com/cn-zh/_vti_bin/Accenture/JobSearchWebService.asmx/GetJobs	Accenture
+http://careers.dupont.com/jobsearch/ajax-callbacks/getJobs.php?organization=All+Job+Organizations&category=All+Job+Categories&location=All+Job+Locations&keyword=&country=China&Entry+Level=1&Experienced=1&Internship=1&_=1433253648117	Dupont
+http://new.abb.com/api/joboffers/getjobs	Abb
+http://search.51job.com/list/co,c,2442420,000000,10,1.html	Fedex
+http://jobs-boeing.com/all-china-jobs/job-list-1	Boeing
+http://jobs.nike.com/search/advanced-search/ASCategory/-1/ASPostedDate/-1/ASCountry/China/ASState/-1/ASCity/-1/ASLocation/-1/ASCompanyName/-1/ASCustom1/-1/ASCustom2/-1/ASCustom3/-1/ASCustom4/-1/ASCustom5/-1/ASIsRadius/false/ASCityStateZipcode/-1/ASDistance/-1/ASLatitude/-1/ASLongitude/-1/ASDistanceType/-1	Nike
+http://careers.bms.com.cn/cn/job-list.html?doAction=search	Bms
