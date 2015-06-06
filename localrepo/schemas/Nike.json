@@ -1,0 +1,20 @@
+{ 
+    "company" : "Nike",
+    "l1_url" : "http://jobs.nike.com/search/advanced-search/ASCategory/-1/ASPostedDate/-1/ASCountry/China/ASState/-1/ASCity/-1/ASLocation/-1/ASCompanyName/-1/ASCustom1/-1/ASCustom2/-1/ASCustom3/-1/ASCustom4/-1/ASCustom5/-1/ASIsRadius/false/ASCityStateZipcode/-1/ASDistance/-1/ASLatitude/-1/ASLongitude/-1/ASDistanceType/-1",
+    "page_list" : {
+          "l2_template_for_nextpage_url" : "http://jobs.nike.com/searches.aspx?keyword=Enter-Search-Terms&ISAdvanceSearch=True&ASCategory=-1&ASPostedDate=-1&ASCountry=china&ASState=-1&ASCity=-1&ASCompanyName=-1&ASCustom1=-1&ASCustom2=-1&ASCustom3=-1&ASCustom4=-1&ASCustom5=-1&ASIsRadius=False&ASCityStateZipcode=-1&ASDistance=-1&ASLatitude=-1&ASLongitude=-1&ASDistanceType=-1&jobtitlekeyword=filter%20by%20job%20title&locationkeyword=filter%20by%20job%20location&dateKeyword=&categoryKeyword=&issearchpaging=True&isdate=False&pagenumber=2",
+          "l2_nextpage_regex" : "s/(.*pagenumber=)(\\d+)/$1-deadbeaf-/g",
+          "l2_last_page" : "//DIV[@id='numberedPagination']/A[last()-1]/text()",
+    }, 
+    "job_list" : {
+          "l2_schema_for_jobs" : "//TABLE[@class='tableSearchResults']/TBODY/TR[2]/following-sibling::*",
+          "l2_schema_for_joburl": "./TD[1]/A/@href",
+          "l2_job_title": "./TD[1]/A/text()",
+          "l2_job_location": "./TD[2]/text()",
+    },
+    "job": {
+          "l3_job_description":"//DIV[@id='jobDesc']",
+    },
+    "job_location_format_regex" : "s/([^,]*).*/$1/g",
+}
+
