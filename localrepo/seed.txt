@@ -27,3 +27,4 @@ http://search.51job.com/list/co,c,2442420,000000,10,1.html	Fedex
 http://jobs-boeing.com/all-china-jobs/job-list-1	Boeing
 http://jobs.nike.com/search/advanced-search/ASCategory/-1/ASPostedDate/-1/ASCountry/China/ASState/-1/ASCity/-1/ASLocation/-1/ASCompanyName/-1/ASCustom1/-1/ASCustom2/-1/ASCustom3/-1/ASCustom4/-1/ASCustom5/-1/ASIsRadius/false/ASCityStateZipcode/-1/ASDistance/-1/ASLatitude/-1/ASLongitude/-1/ASDistanceType/-1	Nike
 http://careers.bms.com.cn/cn/job-list.html?doAction=search	Bms
+http://www.novonordisk.com.cn/content/Denmark/HQ/www-novonordisk-com/en_gb/home/careers/working-at-novo-nordisk/available-jobs-results.China.External.html	Novonordisk

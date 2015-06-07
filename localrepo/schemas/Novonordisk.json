@@ -1,0 +1,16 @@
+{ 
+    "company" : "Novonordisk",
+    "l1_url" : "http://www.novonordisk.com.cn/content/Denmark/HQ/www-novonordisk-com/en_gb/home/careers/working-at-novo-nordisk/available-jobs-results.China.External.html",
+    "job_list" : {
+          "l2_schema_for_jobs" : "//TABLE[@id='joblist-search-table']/TBODY/TR",
+          "l2_schema_for_joburl": "./TD[1]/A/@href",
+          "l2_job_title": "./TD[1]/A/text()",
+          "l2_job_location": "./TD[2]/SPAN/text()",
+          "l2_job_date": "./TD[4]/SPAN/text()",
+    },
+    "job": {
+          "l3_job_description" : "//DIV[@class='row joblist-content']",
+     },
+    "job_location_format_regex" : "s/China - (.*)/$1/g"
+}
+
