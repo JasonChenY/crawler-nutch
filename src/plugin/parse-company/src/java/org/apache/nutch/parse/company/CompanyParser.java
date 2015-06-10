@@ -1247,6 +1247,7 @@ public class CompanyParser implements Parser {
           l3_title = (String) expr.evaluate(doc, XPathConstants.STRING);
           l3_title.replaceAll("\\s+", " ");
           l3_title = SolrUtils.stripNonCharCodepoints(l3_title);
+          page.getMetadata().put(CompanyUtils.company_job_title, ByteBuffer.wrap(l3_title.getBytes()));
       }
 
       String company_subname = "";
@@ -1267,6 +1268,16 @@ public class CompanyParser implements Parser {
           l3_date = DateUtils.formatDate(l3_date, schema.getJob_date_format());
           /* Normally job date should be extracted from L2 page, but if configured which means use this */
           page.getMetadata().put(CompanyUtils.company_job_date, ByteBuffer.wrap(l3_date.getBytes()));
+      }
+
+      if (!schema.getL3_job_location().isEmpty()) {
+          expr = xpath.compile(schema.getL3_job_location());
+          String l3_location = (String) expr.evaluate(doc, XPathConstants.STRING);
+          if ( !schema.getJob_regex_matcher_for_location().isEmpty() ) {
+              l3_location = extract_via_regex(l3_location, schema.getJob_regex_matcher_for_location(), 1);
+          }
+          l3_location = LocationUtils.format(l3_location, schema.getJob_location_format_regex());
+          page.getMetadata().put(CompanyUtils.company_job_location, ByteBuffer.wrap(l3_location.getBytes()));
       }
 
       String l3_description = "";
