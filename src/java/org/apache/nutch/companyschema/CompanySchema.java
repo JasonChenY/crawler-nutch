@@ -385,7 +385,7 @@ public class CompanySchema {
     }
 
     public void setL2_job_title(String l2_job_title) {
-        if (l2_content_type != null) this.l2_job_title = l2_job_title;
+        if (l2_job_title != null) this.l2_job_title = l2_job_title;
     }
 
     public String getL2_job_location() {

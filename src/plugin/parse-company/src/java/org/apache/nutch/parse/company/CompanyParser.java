@@ -137,6 +137,8 @@ import javax.script.ScriptEngineManager;
 import javax.script.ScriptEngine;
 import java.lang.Math;
 
+import org.apache.commons.lang.StringEscapeUtils;
+
 public class CompanyParser implements Parser {
   public static final Logger LOG = LoggerFactory
       .getLogger("org.apache.nutch.parse.company");
@@ -1065,11 +1067,14 @@ public class CompanyParser implements Parser {
                 String newurl = "";
                 if (!schema.getL2_schema_for_joburl().isEmpty()) {
                     newurl = extract_matcher_groups(result, schema.getL2_schema_for_joburl());
-                    newurl = URLDecoder.decode(newurl, "utf-8");
+                    //newurl = URLDecoder.decode(newurl, "utf-8");
+                    newurl = StringEscapeUtils.unescapeHtml(newurl);
+
+                    newurl = guess_URL(newurl, url, schema.getL1_url());
                 }
 
                 if (LOG.isDebugEnabled()) {
-                    LOG.debug(total + "th job-> title: " + title + " date: " + date + " location: " + location + " url: " + url);
+                    LOG.debug(total + "th job-> title: " + title + " date: " + date + " location: " + location + " url: " + newurl);
                 }
 
                 WebPage newPage = WebPage.newBuilder().build();
