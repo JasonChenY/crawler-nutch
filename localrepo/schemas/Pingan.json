@@ -1,0 +1,22 @@
+{ 
+   "company" : "Pingan",
+   "l1_url" : "http://job.pingan.com/advancedSearch.do",
+   "l1_method" : "POST",
+   "l1_postdata" : "jobChannel=-50&companyId=&locationId=&keyWord=&functionId=&cityId=&majorId=&publishTime=30",
+   "page_list" : {
+       "l2_template_for_nextpage_url": "http://job.pingan.com/pagedAdvancedSearch.do?gotoPage=2",
+       "l2_nextpage_regex":"s/(.*gotoPage=)(\\d*)/$1-deadbeaf-/g",
+       "l2_last_page"  : "substring-before(substring-after(//DIV[@class='sample_page m_a']/UL[@class='c']/LI[@class='info']/text(), ',共'), '页,')",
+   },
+   "job_list": {
+        "l2_schema_for_jobs" : "//TABLE[@class='t_a']/TBODY/TR",
+        "l2_schema_for_joburl" : "./TD[1]/A/@href",
+        "l2_job_title" : "./TD[1]/A/text()",
+        "l2_job_location" : "./TD[2]/text()",
+   },
+   "job": {
+        "l3_job_date" : "//TABLE[@class='c_t_a m_a']/TBODY/TR[@class='c_t_a_a'][2]/TD[2]/B/text()"
+        "l3_job_description" : "//TABLE[@class='c_t_a m_a']/TBODY/TR[@class='c_t_a_a'][3]/following-sibling::*",
+   },
+  "job_location_format_regex" : "s/(.*省)?(.*)/$2/g",
+}
