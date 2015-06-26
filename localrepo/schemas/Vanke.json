@@ -1,0 +1,15 @@
+{ 
+   "company" : "Vanke",
+   "l1_url" : "http://vanke.zhiye.com/",
+   "job_list": {
+        "l2_schema_for_jobs" : "//DIV[@class='job-list'][*]/TABLE/TBODY/TR[count(*)=3]",
+        "l2_schema_for_joburl" : "./TD[3]/A/@href",
+        "l2_job_title" : "./TD[1]/text()",
+        "l2_job_location" : "./TD[2]/text()",
+   },
+   "job": {
+        "l3_job_date" : "//DIV[@class='txt']/SPAN[text()='发布时间：']/following-sibling::SPAN[1]/text()"
+        "l3_job_description" : "//DIV[@class='txt']/DIV[@class='pannel']",
+   },
+  "job_location_format_regex" : "s/万科//g",
+}
