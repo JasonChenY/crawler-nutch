@@ -1,5 +1,6 @@
 { 
    "company" : "Honeywell",
+   "limitation" : "can fetch only first page",
    "l1_url" : "http://www.careersathoneywell.com/zh/jobsearch/searchresults.aspx?Keyword=&JobId=&Category=&Country=1012&TravelName=&Postdate=21&SBG=&URR=&LanguageID=5",
    "page_list" : {
         "l2_template_for_nextpage_url" : "http://www.careersathoneywell.com/zh/jobsearch/searchresults.aspx?Keyword=&JobId=&Category=&Country=1012&TravelName=&Postdate=21&SBG=&URR=&LanguageID=5",

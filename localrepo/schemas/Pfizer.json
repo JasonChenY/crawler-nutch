@@ -23,7 +23,7 @@
           "l2_job_location" : "JobRowLocationCell[1].Properties.text",
           "l2_job_date" : "JobRowDateCell[1].Properties.text",
     },
-    "comment" : "summary page fetched via POST, should save whole POST data to solr, and adding FORM to velociy",
+    "limitation" : "summary page fetched via POST, should save whole POST data to solr, and adding FORM to velociy",
     "job" : {
           "l3_job_description" : "$.CaptureResults.JobDescriptionTable[3].Children.JobDescriptionParagraph[1].Properties.html",
     }

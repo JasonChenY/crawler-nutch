@@ -1,0 +1,13 @@
+{ 
+    "company" : "Icbc-axa",
+    "limitation" : "should do unique id calculation later",
+    "l1_url" : "https://www.icbc-axa.com/joinus/vacancy01/vacancy/vacancy.jsp",
+    "job_list" : {
+          "l2_schema_for_jobs" : "//DIV[@class='link']",
+          "l2_schema_for_joburl": "A/@onclick",
+          "l2_job_title": "A/text()",
+          "l2_job_location": "parent::DIV[@class='positions']/preceding-sibling::DIV[@class='name']/A/text()",
+          "l2_job_description":"following-sibling::DIV[@class='table'][1]",
+    },
+}
+
