@@ -30,18 +30,18 @@
              uniqueKey has the same meaning as in Solr schema.xml
              and defaults to "id" if not defined.
          -->
-	<fields>
-		<field dest="content" source="content"/>
-		<field dest="title" source="title"/>
-		<field dest="host" source="host"/>
-		<field dest="batchId" source="batchId"/>
-		<field dest="boost" source="boost"/>
-		<field dest="digest" source="digest"/>
-		<field dest="tstamp" source="tstamp"/>
+    <fields>
+        <!--
+        <field dest="batchId" source="batchId"/>
+        <field dest="boost" source="boost"/>
+        <field dest="digest" source="digest"/>
+        <field dest="job_index_date" source="job_index_date"/>
         <field dest="job_company" source="job_company"/>
-		<field dest="job_title" source="job_title"/>
-		<field dest="job_location" source="job_location"/>
-		<field dest="job_date" source="job_date"/>
-	</fields>
-	<uniqueKey>id</uniqueKey>
+        <field dest="job_title" source="job_title"/>
+        <field dest="job_location" source="job_location"/>
+        <field dest="job_date" source="job_date"/>
+        <field dest="job_description" source="job_description"/>
+        -->
+    </fields>
+    <uniqueKey>id</uniqueKey>
 </mapping>

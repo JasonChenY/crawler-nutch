@@ -81,18 +81,18 @@ public class CompanyIndexingFilter implements IndexingFilter {
       throw new IndexingException(e);
     }
 
+/*
     if (host != null) {
-      // add host as un-stored, indexed and tokenized
-      // Shall I use host for Company Name?
       doc.add("host", host);
     }
-
+*/
     // url is both stored and indexed, so it's both searchable and returned
-    doc.add("url", reprUrl == null ? url : reprUrl);
+    doc.add("job_url", reprUrl == null ? url : reprUrl);
 
     // content(Job Description) is indexed, so that it's searchable, but not stored in index
-    doc.add("content", TableUtil.toString(page.getText()));
+    doc.add("job_description", TableUtil.toString(page.getText()));
 
+/*
     // title(Job Abstract)
     String title = TableUtil.toString(page.getTitle());
     if (MAX_TITLE_LENGTH > -1 && title.length() > MAX_TITLE_LENGTH) { // truncate
@@ -105,7 +105,7 @@ public class CompanyIndexingFilter implements IndexingFilter {
       // NUTCH-1004 Do not index empty values for title field
       doc.add("title", title);
     }
-
+*/
     /* Other Job information
      * Note here job_title is mostly same as the Page Title
      * Job title is extracted from Job List Page
@@ -126,6 +126,7 @@ public class CompanyIndexingFilter implements IndexingFilter {
     doc.add("job_location", job_location);
     doc.add("job_date", job_date);
 
+/*
     // add cached content/summary display policy, if available
     ByteBuffer cachingRaw = page.getMetadata().get(
         Nutch.CACHING_FORBIDDEN_KEY_UTF8);
@@ -133,11 +134,11 @@ public class CompanyIndexingFilter implements IndexingFilter {
     if (caching != null && !caching.equals(Nutch.CACHING_FORBIDDEN_NONE)) {
       doc.add("cache", caching);
     }
-
+*/
     // add timestamp when fetched, for deduplication
     String tstamp = DateUtil.getThreadLocalDateFormat().format(
         new Date(page.getFetchTime()));
-    doc.add("tstamp", tstamp);
+    doc.add("job_index_date", tstamp);
 
     return doc;
   }
